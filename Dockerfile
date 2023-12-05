@@ -15,9 +15,11 @@ RUN curl -s https://get.nextflow.io | bash \
 
 # Bioinfo tools 
 RUN apt-get install --no-install-recommends -y \
-    samtools \
-    bedtools \
-    bowtie2 \
+    samtools=1.17-1 \
+    bedtools=2.30.0+dfsg-2ubuntu1 \
+    bowtie2=2.5.0-3 \
+    muscle=1:5.1.0-1 \
+    hmmer=3.3.2+dfsg-1 \
     && apt-get clean
 
 # creating virtual environment 
