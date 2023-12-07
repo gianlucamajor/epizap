@@ -6,7 +6,7 @@ process MAPPER {
     tuple val(metaParent), path(bwt2Idx)
     tuple val(metaReads), path(reads)
 
-    label 'few_cpu'
+    label 'many_cpu'
 
     output:
     tuple val(metaReads), path("mapping/*.{bam,sam}"), emit: mapped
