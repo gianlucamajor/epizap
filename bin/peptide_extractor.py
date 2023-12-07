@@ -8,6 +8,8 @@ from model.Segments import Segment
 
 import click
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 
 @click.command(help="Aim of this program is generate fasta file with peptide sequences")
@@ -29,9 +31,9 @@ def _create_output_file_name(outdir, prefix, segment):
     return outdir + "/" + prefix + "_" +segment.get_name() + ".fasta"
 
 
-def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=False):
+def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=True):
     DELIM="\t"
-    SCF_POS=0 
+    SCF_POS=0
     START_POS=1
     END_POS=2
     TOTAL_READS_MAPPED_POS=3
@@ -47,7 +49,7 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=False)
         file_reader = csv.reader(file, delimiter=DELIM)
         for line in file_reader:
             s = Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";") )
-            
+
             if with_freq:
                 sequences_with_frequency = collections.Counter(s.get_peptide_ids())
                 sequences = _build_list_of_sequences_with_frequency(dict(sequences_with_frequency), pep, True)
@@ -60,7 +62,7 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=False)
             _write_output_file_(sequences, output_name)
             segments.append(s)
             # print(line[SCF_POS],line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[MIN_MAPQ], line[MAX_MAPQ], line[LIST_OF_READS])
-            # bedtools merge  -c (columns) 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > ${outFileName} 
+            # bedtools merge  -c (columns) 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > ${outFileName}
     return segments
 
 def _build_list_of_sequences_with_frequency(sequences_with_frequency, target_fasta_input, del_desc):
@@ -71,11 +73,19 @@ def _build_list_of_sequences_with_frequency(sequences_with_frequency, target_fas
             r = record_dict[seq_id]
             if del_desc:
                 r.description = ''
-            for _ in range(int(frequency)):
-                sequences.append(r)
+            for idx in range(int(frequency)):
+                new_sequence_id = r.id
+                if idx > 0:
+                    new_sequence_id = seq_id + f"_clone_{idx}"
+                new_record = SeqRecord(
+                    r.seq,
+                    id=new_sequence_id,
+                    name=r.name,
+                    description=r.description)
+
+                sequences.append(new_record)
         except Exception as e:
             print("Ops", e, "occurred")
-        
     return sequences
 
 def _build_list_of_sequences(seq_id_list, target_fasta_input, rd):
