@@ -1,7 +1,7 @@
 process IDX_BUILDER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: false
     tag "${meta.id}"
-    cpus 6
+    label 'med_cpu'
     input:
     tuple val(meta), path(fastaRef)
 
