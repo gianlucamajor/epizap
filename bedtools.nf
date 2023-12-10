@@ -13,6 +13,7 @@ log.info """\
 process segmentExtractor {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${meta.id}"
+    label "few_cpu"
 
     input:
     tuple val(meta), path(mappedFile)
@@ -33,6 +34,7 @@ process segmentExtractor {
 process peptide_extractor {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaSeg.id}"
+    label "med_cpu"
 
     input:
     tuple val(metaSeg), path(segmentFile)
@@ -51,6 +53,7 @@ process peptide_extractor {
 process msa {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${pepSegFile.name}"
+    label "med_cpu"
 
     input:
     tuple val(pepSegMeta), path(pepSegFile)
@@ -61,12 +64,13 @@ process msa {
     script:
     """
     mkdir msa
-    muscle -align ${pepSegFile} -output msa/${pepSegFile.baseName}-msa.msc
+    muscle -align ${pepSegFile} -output msa/${pepSegFile.baseName}-msa.msc -threads ${task.cpus}
     """
 }
 
 process hmm_builder{
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
+    label "few_cpu"
 
     input:
     path(msaFile)
@@ -84,7 +88,8 @@ process hmm_builder{
 
 process hmm_emit{
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-
+    label "few_cpu"
+    
     input:
     path(hmmFile)
 
