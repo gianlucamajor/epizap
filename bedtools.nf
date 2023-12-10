@@ -4,7 +4,7 @@ params.outdir = 'results'
 
 log.info """\
     ===================================
-    reference: ${params.mappingFiles}
+    mapping Files: ${params.mappingFiles}
     peptiedes: ${params.peptides}
     outdir: ${params.outdir}
     ===================================
@@ -53,7 +53,7 @@ process peptide_extractor {
 process msa {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${pepSegFile.name}"
-    label "med_cpu"
+    label "many_cpu"
 
     input:
     tuple val(pepSegMeta), path(pepSegFile)
@@ -89,7 +89,7 @@ process hmm_builder{
 process hmm_emit{
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     label "few_cpu"
-    
+
     input:
     path(hmmFile)
 
