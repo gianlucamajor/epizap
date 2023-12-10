@@ -1,6 +1,7 @@
 
 process PRIMARY_MAPPED_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
+    label 'few_cpu'
     tag "${meta.id}"
 
     input:
