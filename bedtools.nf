@@ -54,6 +54,9 @@ process msa {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${pepSegFile.name}"
     label "many_cpu"
+    memory { task.memory * task.attempt } 
+    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    maxRetries 3
 
     input:
     tuple val(pepSegMeta), path(pepSegFile)
@@ -131,13 +134,13 @@ workflow{
     pepSegmentsCh.flatten()
         .filter({ it.countFasta() > 1 && it.countFasta() < 30000})
         .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta()]
+            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), memory: "high_memory"]
             [meta, it]
         }
         .set{pepSegmentsChFlt}
 
     // pepSegmentsChFlt.view()
-
+    
     msa(pepSegmentsChFlt) | hmm_builder | hmm_emit
 
 }
