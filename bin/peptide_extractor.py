@@ -17,21 +17,22 @@ from Bio.SeqRecord import SeqRecord
 @click.argument("pep", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--prefix", "-pf")
 @click.option("--outdir", "-o", default="outdir")
-def main(seg, pep, outdir:str, prefix:str):
+@click.option("--with_frequency", "-with_freq", default=False)
+def main(seg, pep, outdir:str, prefix:str, with_frequency:bool):
 
     _setup_csv_field_size_limit()
-    _read_mapped_segment_tsv(seg, pep, outdir, prefix)
+    _read_mapped_segment_tsv(seg, pep, outdir, prefix, with_frequency)
 
 
 def _setup_csv_field_size_limit():
     # increasing csv file size limit
     csv.field_size_limit(int(sys.maxsize/1000))
 
-def _create_output_file_name(outdir, prefix, segment):
-    return outdir + "/" + prefix + "_" +segment.get_name() + ".fasta"
+def _create_output_file_name(outdir, prefix, segment, total_of_sequence):
+    return outdir + "/" + prefix + "_" +segment.get_name()+ "_" + str(total_of_sequence) + ".fasta"
 
 
-def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=True):
+def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_frequency):
     DELIM="\t"
     SCF_POS=0
     START_POS=1
@@ -50,15 +51,16 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_freq=True):
         for line in file_reader:
             s = Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";") )
 
-            if with_freq:
+            if with_frequency:
                 sequences_with_frequency = collections.Counter(s.get_peptide_ids())
                 sequences = _build_list_of_sequences_with_frequency(dict(sequences_with_frequency), pep, True)
             else:
                 distinct_sequences =  s.get_distinct_peptide_ids()
                 sequences = _build_list_of_sequences(distinct_sequences, pep, True)
 
-            output_name = _create_output_file_name(outdir, prefix, s)
-            print(f"{len(sequences)} sequences was found")
+            total_of_sequence = len(sequences)
+            output_name = _create_output_file_name(outdir, prefix, s, total_of_sequence)
+            print(f"{total_of_sequence} sequences was found")
             _write_output_file_(sequences, output_name)
             segments.append(s)
             # print(line[SCF_POS],line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[MIN_MAPQ], line[MAX_MAPQ], line[LIST_OF_READS])
