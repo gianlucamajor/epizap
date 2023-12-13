@@ -35,6 +35,9 @@ process peptide_extractor {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaSeg.id}"
     label "med_cpu"
+    memory { task.memory * task.attempt } 
+    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    maxRetries 3
 
     input:
     tuple val(metaSeg), path(segmentFile)
@@ -134,7 +137,7 @@ workflow{
     pepSegmentsCh.flatten()
         .filter({ it.countFasta() > 1 && it.countFasta() < 30000})
         .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), memory: "high_memory"]
+            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta()]
             [meta, it]
         }
         .set{pepSegmentsChFlt}
