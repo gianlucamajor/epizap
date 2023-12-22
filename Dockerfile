@@ -20,6 +20,7 @@ RUN apt-get install --no-install-recommends -y \
     bowtie2=2.5.0-3 \
     muscle=1:5.1.0-1 \
     hmmer=3.3.2+dfsg-1 \
+    ncbi-blast+=2.12.0+ds-3build1 \
     && apt-get clean
 
 # creating virtual environment 
