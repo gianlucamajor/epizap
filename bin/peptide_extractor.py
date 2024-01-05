@@ -4,7 +4,7 @@ import sys
 import csv
 import collections
 
-from model.Segments import Segment
+from model.Segment import Segment
 
 import click
 from Bio import SeqIO
@@ -50,13 +50,15 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_frequency):
         file_reader = csv.reader(file, delimiter=DELIM)
         for line in file_reader:
             s = Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";") )
-
+            
+            pep_record_dict = _read_fasta(pep)
+            
             if with_frequency:
                 sequences_with_frequency = collections.Counter(s.get_peptide_ids())
-                sequences = _build_list_of_sequences_with_frequency(dict(sequences_with_frequency), pep, True)
+                sequences = _build_list_of_sequences_with_frequency(dict(sequences_with_frequency), pep_record_dict, True)
             else:
                 distinct_sequences =  s.get_distinct_peptide_ids()
-                sequences = _build_list_of_sequences(distinct_sequences, pep, True)
+                sequences = _build_list_of_sequences(distinct_sequences, pep_record_dict, True)
 
             total_of_sequence = len(sequences)
             output_name = _create_output_file_name(outdir, prefix, s, total_of_sequence)
@@ -67,12 +69,11 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_frequency):
             # bedtools merge  -c (columns) 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > ${outFileName}
     return segments
 
-def _build_list_of_sequences_with_frequency(sequences_with_frequency, target_fasta_input, del_desc):
-    record_dict = _read_fasta(target_fasta_input)
+def _build_list_of_sequences_with_frequency(sequences_with_frequency, pep_record_dict, del_desc):
     sequences = []
     for seq_id, frequency in sequences_with_frequency.items():
         try:
-            r = record_dict[seq_id]
+            r = pep_record_dict[seq_id]
             if del_desc:
                 r.description = ''
             for idx in range(int(frequency)):
@@ -90,12 +91,11 @@ def _build_list_of_sequences_with_frequency(sequences_with_frequency, target_fas
             print("Ops", e, "occurred")
     return sequences
 
-def _build_list_of_sequences(seq_id_list, target_fasta_input, rd):
-    record_dict = _read_fasta(target_fasta_input)
+def _build_list_of_sequences(seq_id_list, pep_record_dict, rd):
     sequences = []
     for seq_id in seq_id_list:
         try:
-            r = record_dict[seq_id]
+            r = pep_record_dict[seq_id]
             if rd:
                 r.description = ''
             sequences.append(r)

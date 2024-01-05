@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 class Segment():
     
     def __init__(self, scaffod:str, start:int, end:int, count:int, min_mapq:float, max_mapq:float, avg_mapq:float, median_mapq:float, reads:[]) -> None:
