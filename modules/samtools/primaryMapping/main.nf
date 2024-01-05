@@ -6,8 +6,7 @@ process PRIMARY_MAPPED_EXTRACTOR {
 
     input:
     tuple val(meta), path(mappingFile)
-
-    output:
+    
     output:
     path("only-primary-mapping/*_opm.{bam,sam}"), emit: opm
 
