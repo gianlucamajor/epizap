@@ -17,7 +17,7 @@ include { SEGMENT_EXTRACTOR } from './modules/local/segment_extractor/main.nf'
 include { MSA } from './modules/local/msa/main.nf'
 include { HMM_PROFILE_BUILDER } from './modules/local/hmm_profile_builder/main.nf'
 include { HMM_CONSENSUS_BUILDER } from './modules/local/hmm_consensus_builder/main.nf'
-
+include { LONELY } from './modules/local/lonely/main.nf'
 
 workflow{
 
@@ -51,7 +51,17 @@ workflow{
         .set{pepSegmentsChFlt}
 
     // pepSegmentsChFlt.view()
+
+    pepSegmentsCh.flatten()
+        .filter({ it.countFasta() < 2})
+        .map{it ->
+            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta()]
+            [meta, it]
+        }
+        .set{lonelyPepSegmentsChFlt}
+
     
     MSA(pepSegmentsChFlt) | HMM_PROFILE_BUILDER | HMM_CONSENSUS_BUILDER
+    LONELY(lonelyPepSegmentsChFlt)
 
 }
