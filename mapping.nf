@@ -10,9 +10,9 @@ log.info """\
     ===================================
     """.stripIndent()
 
-include { IDX_BUILDER } from './modules/bowtie2/build/main.nf'
-include { MAPPER } from './modules/bowtie2/mapping/main.nf'
-include { PRIMARY_MAPPED_EXTRACTOR } from './modules/samtools/primaryMapping/main.nf'
+include { IDX_BUILDER } from './modules/local/bowtie2/build/main.nf'
+include { MAPPER } from './modules/local/bowtie2/mapping/main.nf'
+include { PRIMARY_MAPPED_EXTRACTOR } from './modules/local/samtools/primaryMapping/main.nf'
 
 workflow {
 
