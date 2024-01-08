@@ -1,7 +1,7 @@
 process SEQUENCE_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaSeg.id}"
-    label "few_cpu"
+    label "few_cpu_high_memory"
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
     maxRetries 3
 
