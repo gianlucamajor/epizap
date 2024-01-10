@@ -44,8 +44,6 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_frequency):
     MEDIAN_MAPQ=7
     LIST_OF_READS=8
 
-    segments = []
-
     with open(map_seg_file) as file:
         file_reader = csv.reader(file, delimiter=DELIM)
         for line in file_reader:
@@ -64,10 +62,10 @@ def _read_mapped_segment_tsv(map_seg_file, pep, outdir, prefix, with_frequency):
             output_name = _create_output_file_name(outdir, prefix, s, total_of_sequence)
             print(f"{total_of_sequence} sequences was found")
             _write_output_file_(sequences, output_name)
-            segments.append(s)
+            
             # print(line[SCF_POS],line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[MIN_MAPQ], line[MAX_MAPQ], line[LIST_OF_READS])
             # bedtools merge  -c (columns) 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > ${outFileName}
-    return segments
+    
 
 def _build_list_of_sequences_with_frequency(sequences_with_frequency, pep_record_dict, del_desc):
     sequences = []
