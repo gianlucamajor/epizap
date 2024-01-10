@@ -8,12 +8,14 @@ process PRIMARY_MAPPED_EXTRACTOR {
     tuple val(meta), path(mappingFile)
     
     output:
-    path("only-primary-mapping/*_opm.{bam,sam}"), emit: opm
+    tuple val(meta), path("only-primary-mapping/*_opm.{bam,sam}"), emit: opm
 
     script: 
     """
     echo "${meta.id} ${mappingFile}"
     mkdir only-primary-mapping
-    samtools view -b -F 256 -F 4 ${mappingFile} > only-primary-mapping/${meta.id}"_opm.bam"
+    samtools view --threads $task.cpus -b -F 256 -F 4 ${mappingFile} > only-primary-mapping/${meta.id}"_opm.bam"
     """
+
+    // TODO:   -@, --threads INT // Number of additional threads to use [0]
 }
