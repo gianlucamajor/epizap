@@ -14,6 +14,6 @@ process HMM_PROFILE_BUILDER {
     script:
     """
     mkdir hmm
-    hmmbuild hmm/${msaFile.baseName}.hmm ${msaFile}
+    hmmbuild --cpu $task.cpus hmm/${msaFile.baseName}.hmm ${msaFile}
     """
 }

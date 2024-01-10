@@ -16,6 +16,4 @@ process PRIMARY_MAPPED_EXTRACTOR {
     mkdir only-primary-mapping
     samtools view --threads $task.cpus -b -F 256 -F 4 ${mappingFile} > only-primary-mapping/${meta.id}"_opm.bam"
     """
-
-    // TODO:   -@, --threads INT // Number of additional threads to use [0]
 }
