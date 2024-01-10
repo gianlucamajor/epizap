@@ -1,7 +1,7 @@
 process LONELY {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${file.name}"
-    label "few_cpu"
+    label "one_cpu"
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
     maxRetries 3
 

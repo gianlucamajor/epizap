@@ -1,6 +1,6 @@
 process HMM_CONSENSUS_BUILDER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-    label "few_cpu"
+    label "one_cpu"
 
     input:
     path(hmmFile)

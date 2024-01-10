@@ -1,7 +1,7 @@
 process SEGMENT_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${meta.id}"
-    label "few_cpu"
+    label "one_cpu"
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
     maxRetries 3
     
