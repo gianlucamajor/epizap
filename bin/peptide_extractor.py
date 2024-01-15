@@ -23,9 +23,10 @@ def main(seg, pep, outdir:str, prefix:str, threads:int):
 
     clear_read_description = True
     segment_list = _read_mapped_segment_tsv(seg)
+    pep_dic = _get_dic_from_fasta(pep)
     
     list_of_parameter =[
-        (segment.get_distinct_peptide_ids(), prefix, segment.get_name(), outdir, pep, clear_read_description) for segment in segment_list
+        (segment.get_distinct_peptide_ids(), prefix, segment.get_name(), outdir, pep_dic, clear_read_description) for segment in segment_list
     ]
 
     with Pool(threads) as pool:
@@ -65,8 +66,7 @@ def _read_mapped_segment_tsv(map_seg_file):
     return segments
     
 
-def _build_list_of_sequences_and_write_output(seq_id_list, prefix, segment_name, outdir, pep, rd):
-    pep_record_dict = _read_fasta(pep) # to make it lot of times could be use more memory than is necessary - to be improved
+def _build_list_of_sequences_and_write_output(seq_id_list, prefix, segment_name, outdir, pep_record_dict, rd):    
     sequences = []
     for seq_id in seq_id_list:
         try:
@@ -82,6 +82,15 @@ def _build_list_of_sequences_and_write_output(seq_id_list, prefix, segment_name,
     _write_output_file_(sequences, output_name)
 
     return sequences
+
+def _get_dic_from_fasta(file):
+    p_dic = _read_fasta(file)
+    p_keys =  p_dic.keys()
+    new_dic = {}
+    for k in p_keys:
+        new_dic[k] = p_dic[k]
+
+    return new_dic
 
 def _read_fasta(faa_file):
     return SeqIO.index(faa_file, "fasta")
