@@ -1,7 +1,7 @@
 process SEQUENCE_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaSeg.id}"
-    label "few_cpu_high_memory"
+    label "many_cpu"
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
     maxRetries 3
 
@@ -15,6 +15,6 @@ process SEQUENCE_EXTRACTOR {
     script:
     """
     mkdir peptides-segment
-    peptide_extractor.py  ${segmentFile} ${peptideFile} -o peptides-segment -pf ${metaSeg.id}
+    peptide_extractor.py  ${segmentFile} ${peptideFile} -o peptides-segment -pf ${metaSeg.id} -t ${task.cpus}
     """
 }
