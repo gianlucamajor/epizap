@@ -1,19 +1,20 @@
 process LONELY {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-    tag "${file.name}"
-    label "one_cpu"
+    tag " Number of segments with lonely peptide: ${files.size()}"
+    label "med_cpu"
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
     maxRetries 3
 
     input:
-    tuple val(meta), path(file)
+    path(files)
 
     output:
-    path("lonely/*.lone")
+    path("lonely/lonely_peptides.fasta")
+
 
     script:
     """
     mkdir lonely
-    cp  ${file} lonely/${file.baseName}.lone
-    """
+    lonely_peptide_generator.py ${files} -o lonely/lonely_peptides.fasta --threads ${task.cpus}
+    """ 
 }

@@ -11,15 +11,12 @@ log.info """\
 include { LONELY } from './modules/local/lonely/main.nf'
 
 workflow{
-    
+
     Channel.fromPath(params.pepSeg)
         .filter({ it.countFasta() < 2})
-        .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta()]
-            [meta, it]
-        }
+        .collect()
         .set{lonelyPepSegCh}
     
-    LONELY(lonelyPepSegCh)
+    LONELY(lonelyPepSegCh) | view()
 
 }
