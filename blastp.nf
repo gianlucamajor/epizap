@@ -29,7 +29,7 @@ process blastp {
     """
     blastp -word_size 6 -gapopen 13 -evalue 100 \\
     -outfmt '6 std ssciname sseqid sgi' \\
-    -num_alignments 10 \\
+    -num_alignments 50 \\
     -max_hsps 1 \\
     -num_threads ${task.cpus} \\
     -db ${db}/${metaDb.id} \\
@@ -44,6 +44,7 @@ workflow {
             meta = [id: params.dbName]
             [meta, it]
         }
+        .first()
         .set{dbCh}
 
     Channel.fromPath(params.sequences)
