@@ -3,6 +3,7 @@ process PRIMARY_MAPPED_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     label 'many_cpu'
     tag "${meta.id}"
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
 
     input:
     tuple val(meta), path(mappingFile)

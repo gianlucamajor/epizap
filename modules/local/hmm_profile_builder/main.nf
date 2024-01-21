@@ -2,7 +2,7 @@
 process HMM_PROFILE_BUILDER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     label "few_cpu"
-    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
 
     input:

@@ -2,7 +2,7 @@ process LONELY {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag " Number of segments with lonely peptide: ${files.size()}"
     label "med_cpu"
-    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
 
     input:

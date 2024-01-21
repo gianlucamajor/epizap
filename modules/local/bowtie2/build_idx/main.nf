@@ -2,6 +2,7 @@ process IDX_BUILDER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: false
     tag "${meta.id}"
     label 'many_cpu'
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     input:
     tuple val(meta), path(fastaRef)
 

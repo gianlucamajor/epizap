@@ -2,7 +2,7 @@ process MSA {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${pepSegFile.name}"
     label "med_cpu"
-    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
 
     input:

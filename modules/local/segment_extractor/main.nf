@@ -2,7 +2,7 @@ process SEGMENT_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${meta.id}"
     label "med_cpu"
-    errorStrategy { task.exitStatus == 137 ? 'retry' : 'ignore' } 
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
     
     input:

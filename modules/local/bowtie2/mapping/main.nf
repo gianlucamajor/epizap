@@ -1,6 +1,7 @@
 process MAPPER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaReads.id}"
+    errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
 
     input:
     tuple val(metaParent), path(bwt2Idx)
