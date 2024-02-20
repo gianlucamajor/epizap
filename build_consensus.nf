@@ -20,13 +20,24 @@ workflow{
 
 
     pepSegCh
-        .filter({ it.countFasta() > 1 && it.countFasta() < 30000})
+        .filter({ it.countFasta() > 1 && it.countFasta() < 1000})
         .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta()]
+            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "align"]
             [meta, it]
         }
         .set{msaPepSegCh}    
     
-    MSA(msaPepSegCh) | HMM_PROFILE_BUILDER | HMM_CONSENSUS_BUILDER
+    
+    pepSegCh
+        .filter({ it.countFasta() >= 1000})
+        .map{it ->
+            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "super5"]
+            [meta, it]
+        }
+        .set{msaPepSegLargeCh}    
+    
+    msaPepSegCh.mix(msaPepSegLargeCh).set{allMSAPepSeg}
+    
+    MSA(allMSAPepSeg) | HMM_PROFILE_BUILDER | HMM_CONSENSUS_BUILDER
 
 }

@@ -14,6 +14,6 @@ process MSA {
     script:
     """
     mkdir msa
-    muscle -align ${pepSegFile} -output msa/${pepSegFile.baseName}-msa.msc -threads ${task.cpus}
+    muscle -${pepSegMeta.algorithm} ${pepSegFile} -output msa/${pepSegFile.baseName}-msa.msc -threads ${task.cpus}
     """
 }
