@@ -27,10 +27,7 @@ process blastp {
     
     script:
     """
-    blastp -word_size 6 -gapopen 13 -evalue 100 \\
-    -outfmt '6 std ssciname sseqid sgi' \\
-    -num_alignments 50 \\
-    -max_hsps 1 \\
+    blastp -outfmt '6 std ssciname sseqid sgi' \\
     -num_threads ${task.cpus} \\
     -db ${db}/${metaDb.id} \\
     -query ${sequences} > ${sequences.simpleName}.tsv
