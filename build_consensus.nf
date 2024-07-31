@@ -22,8 +22,8 @@ workflow{
     pepSegCh
         .filter({ it.countFasta() > 1 && it.countFasta() < 1000})
         .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "align"]
-            [meta, it]
+            metaAlign = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "align"]
+            [metaAlign, it]
         }
         .set{msaPepSegCh}    
     
@@ -31,8 +31,8 @@ workflow{
     pepSegCh
         .filter({ it.countFasta() >= 1000})
         .map{it ->
-            meta = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "super5"]
-            [meta, it]
+            metaSuper5 = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "super5"]
+            [metaSuper5, it]
         }
         .set{msaPepSegLargeCh}    
     

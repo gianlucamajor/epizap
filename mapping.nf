@@ -24,23 +24,23 @@ workflow {
 
     Channel.fromPath(params.ref)
         .map{ it -> 
-                meta = [id:it.simpleName]
-                [meta, it]
+                metaRef = [id:it.simpleName]
+                [metaRef, it]
         }
         .first()
         .set{inputRefIdx}
 
         Channel.fromPath(params.reads)
         .map{ it -> 
-            meta = [id:it.simpleName]
-            [meta, it]
+            metaReads = [id:it.simpleName]
+            [metaReads, it]
         }
         .set{readsCh}
     
     Channel.fromPath(params.peptides)
         .map{it ->
-            meta = [id: it.simpleName]
-            [meta, it]
+            metaPep = [id:it.simpleName]
+            [metaPep, it]
         }
         .first()
         .set{peptidesCh}
