@@ -1,6 +1,6 @@
 process MSA {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-    tag "${pepSegFile.name}"
+    tag "${pepSegFile.name}; ${pepSegMeta.algorithm}"
     label "med_cpu"
     errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
