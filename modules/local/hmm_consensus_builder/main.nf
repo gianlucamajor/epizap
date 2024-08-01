@@ -8,7 +8,7 @@ process HMM_CONSENSUS_BUILDER {
     path(hmmFile)
 
     output:
-    path("consensus/*.consensus")
+    path("consensus/*.consensus"), emit: consensus
 
 
     script:

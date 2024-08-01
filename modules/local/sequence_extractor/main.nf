@@ -10,7 +10,7 @@ process SEQUENCE_EXTRACTOR {
     tuple val(metaPep), path(peptideFile)
 
     output:
-    path("peptides-segment/*.fasta")
+    path("peptides-segment/*.fasta"), emit: pepSeg
 
     script:
     """
