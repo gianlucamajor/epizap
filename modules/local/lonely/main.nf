@@ -1,6 +1,6 @@
 process LONELY {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-    tag " Number of segments with lonely peptide: ${files.size()}"
+    tag "number of segments with lonely peptide: ${files.size()}"
     label "med_cpu"
     errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
@@ -9,7 +9,7 @@ process LONELY {
     path(files)
 
     output:
-    path("lonely/lonely_peptides.fasta")
+    path("lonely/lonely_peptides.fasta"), emit: lonelyPep
 
 
     script:
