@@ -1,6 +1,6 @@
-params.msaFiles = "/work/data/epizap/results_gDNA-kDNA_on_t_cruzi_br_29-02-2024/msa/*.msc"
-
-params.outdir = "results"
+params.baseDir = "/home/gianluca/workspace/epizap/results_04_10_2024"
+params.msaFiles = "${params.baseDir}/msa/*.msc"
+params.outdir = "${params.baseDir}"
 
 log.info """\
 ========================================================
@@ -22,10 +22,9 @@ process mview {
     def outFileName = "${meta.id}.html"
     """
     mkdir mview
-    mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus on -con_threshold 100 ${msaFile} > mview/${outFileName}
+    mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus on ${msaFile} > mview/${outFileName}
     """
 }
-
 workflow{
     Channel.fromPath(params.msaFiles)
     .map{ it ->
