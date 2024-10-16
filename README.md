@@ -17,3 +17,10 @@ npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
  ### Run 
  nextflow epizap.nf --reads /work/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides dataSet/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref dataSet/ref/t_cruzi_br_a4.fna --outdir "results_24_08_2024"
 
+### Requirements
+#### NEXTFLOW 
+-> Nextflow can be used on any POSIX-compatible system (Linux, macOS, etc), and on Windows through WSL. It requires Bash 3.2 (or later) and Java 11 (or later, up to 23). You can see which version you have using the following command:
+ java -version
+
+ More details on: https://www.nextflow.io/docs/latest/install.html
+
