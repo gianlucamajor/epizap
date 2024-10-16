@@ -24,3 +24,7 @@ npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
 
  More details on: https://www.nextflow.io/docs/latest/install.html
 
+#### DOCKER
+
+ https://docs.docker.com/get-started/
+
