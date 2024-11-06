@@ -2,7 +2,8 @@
 
 include { IDX_BUILDER } from './modules/local/bowtie2/build_idx/main.nf'
 include { MAPPER } from './modules/local/bowtie2/mapping/main.nf'
-include { PRIMARY_MAPPED_EXTRACTOR } from './modules/local/samtools/primaryMapping/main.nf'
+include { MAX_SCORE_MAPPING_EXTRACTOR } from './modules/local/samtools/max_score_mapping/main.nf'
+// include { PRIMARY_MAPPED_EXTRACTOR } from './modules/local/samtools/primaryMapping/main.nf' # TO BE REMOVED
 
 workflow mapper {
     take:
@@ -27,9 +28,10 @@ workflow mapper {
 
     IDX_BUILDER(inputRefIdx)
     MAPPER(IDX_BUILDER.out.idx, readsCh)
-    PRIMARY_MAPPED_EXTRACTOR(MAPPER.out.mapped) 
+    MAX_SCORE_MAPPING_EXTRACTOR(MAPPER.out.mapped)
+    // PRIMARY_MAPPED_EXTRACTOR(MAPPER.out.mapped) # TO BE REMOVED
 
     emit: 
-    PRIMARY_MAPPED_EXTRACTOR.out
+    MAX_SCORE_MAPPING_EXTRACTOR.out
 
 }
