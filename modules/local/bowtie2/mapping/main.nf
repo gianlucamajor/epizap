@@ -2,12 +2,12 @@ process MAPPER {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     tag "${metaReads.id}"
     errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
+    label 'many_cpu'
 
     input:
     tuple val(metaParent), path(bwt2Idx)
     tuple val(metaReads), path(reads)
-    label 'many_cpu'
-
+    
     output:
     tuple val(metaReads), path("mapping/*.{bam,sam}"), emit: mapped
 
