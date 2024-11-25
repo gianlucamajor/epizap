@@ -16,6 +16,6 @@ process SEGMENT_EXTRACTOR {
 
     """
     mkdir segments
-    bedtools merge -i ${mappedFile} -c 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > segments/${outFileName}
+    bedtools merge -i ${mappedFile} -s -c 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > segments/${outFileName}
     """
 }
