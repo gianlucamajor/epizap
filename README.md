@@ -15,7 +15,7 @@ npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
  #nextflow epizap.nf --mapper /home/gianluca/workspace/epizap/results-04-08-2024/only-primary-mapping/control_and_chagasic_patients_opm.bam --ref dataSet/ref/t_cruzi_br_a4.fna  --outdir results-04-08-2024/ --peptides dataSet/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --reads /work/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq
 
  ### Run 
- nextflow epizap.nf --reads /work/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides dataSet/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref dataSet/ref/t_cruzi_br_a4.fna --outdir "results_24_08_2024"
+nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna --outdir "results_24_08_2024"
 
 ### Requirements
 #### NEXTFLOW 
