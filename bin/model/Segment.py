@@ -25,5 +25,8 @@ class Segment():
     def get_distinct_peptide_ids(self) -> set:
         return set(self.get_peptide_ids())
     
+    def get_set_of_reads(self) -> set:
+        return set(self.reads)
+    
 
 
