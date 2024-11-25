@@ -4,10 +4,11 @@ import os
 import re
 
 import click
-
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
+# python3 bin/epitope_predictor.py results_05_11_2024/mview/*.html -o results_05_11_2024/
 
 CONSENSUS_PATTERN = re.compile(r'^consensus/(\d{2,3})%')
 EPITOPE_PATTERN = re.compile(r'[A-Z]{5,}')
