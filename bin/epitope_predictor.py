@@ -51,8 +51,8 @@ def epitope_writer(epitope_list, outdir):
             consensus = ept['epitope_elected']['consensus']
             epitopes = ept['epitope_elected']['epitopes']
             
-            for e in epitopes:
-                seq_rec = _create_seq_record(e, name, epitopes.index(e))
+            for idx, e in enumerate(epitopes):
+                seq_rec = _create_seq_record(e, name, idx)
                 epitopes_seq_list.append(seq_rec)
                 
                 
