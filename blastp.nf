@@ -3,15 +3,6 @@ params.db = "${projectDir}/blast/db/"
 params.dbName = "epitope_table_04_08_22_T_Cruzi_1659634014"
 params.outDir = 'blast'
 
-log.info """\
-    ===================================
-    sequences: ${params.sequences}
-    database name: ${params.dbName}
-    database: ${params.db}
-    outdir: ${params.outDir}
-    ===================================
-    """.stripIndent()
-
 process blastp {
     publishDir "${params.outDir}", mode: 'copy', overwrite: true
     tag "${meta.id}"
@@ -35,10 +26,19 @@ process blastp {
 }
 
 workflow {
+
+    log.info """\
+    ===================================
+    sequences: ${params.sequences}
+    database name: ${params.dbName}
+    database: ${params.db}
+    outdir: ${params.outDir}
+    ===================================
+    """.stripIndent()
     
     Channel.fromPath(params.db)
         .map{it ->
-            meta = [id: params.dbName]
+            def meta = [id: params.dbName]
             [meta, it]
         }
         .first()
@@ -46,7 +46,7 @@ workflow {
 
     Channel.fromPath(params.sequences)
         .map{it ->
-            meta = [id: it.simpleName]
+            def meta = [id: it.simpleName]
             [meta, it]
         }
         .set{sequencesCh}

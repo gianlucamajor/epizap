@@ -9,7 +9,7 @@ workflow segmentRetriever{
     main:
     Channel.fromPath(peptides)
         .map{it ->
-            metaPep = [id:it.simpleName]
+            def metaPep = [id:it.simpleName]
             [metaPep, it]
         }
         .first()

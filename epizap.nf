@@ -6,6 +6,14 @@ params.mapper = ""
 
 params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
 
+include { mapper } from "./mapper"
+include { segmentRetriever } from "./segment_retriever"
+include { consensusBuilder } from './consensus_builder'
+include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
+include { preEpitopeRetriever } from './pre_epitope_retriever'
+
+workflow {
+
 log.info """\
     ===================================
     Reads: ${params.reads}
@@ -18,22 +26,13 @@ log.info """\
     ===================================
     """.stripIndent()
 
-
-include { mapper } from "./mapper"
-include { segmentRetriever } from "./segment_retriever"
-include { consensusBuilder } from './consensus_builder'
-include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
-include { preEpitopeRetriever } from './pre_epitope_retriever'
-
-workflow {
-
     if( ! params.mapper){
         mapper(params.ref, params.reads)
         mapping = mapper.out
     } else {
         Channel.fromPath(params.mapper)
             .map{ it -> 
-                metaMap = [id:it.simpleName]
+                def metaMap = [id:it.simpleName]
                 [metaMap, it]
             }.set{mapping}
     }

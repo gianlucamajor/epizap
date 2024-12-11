@@ -13,7 +13,7 @@ workflow mapper {
     main:
     Channel.fromPath(ref)
         .map{ it -> 
-                metaRef = [id:it.simpleName]
+                def metaRef = [id:it.simpleName]
                 [metaRef, it]
         }
         .first()
@@ -21,7 +21,7 @@ workflow mapper {
 
         Channel.fromPath(reads)
         .map{ it -> 
-            metaReads = [id:it.simpleName]
+            def metaReads = [id:it.simpleName]
             [metaReads, it]
         }
         .set{readsCh}

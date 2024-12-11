@@ -12,7 +12,7 @@ workflow consensusBuilder {
         .flatten()
         .filter({ it.countFasta() > 1 && it.countFasta() < 1000})
         .map{it ->
-            metaAlign = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "align"]
+            def metaAlign = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "align"]
             [metaAlign, it]
         }
         .set{msaPepSegCh}    
@@ -22,7 +22,7 @@ workflow consensusBuilder {
         .flatten()
         .filter({ it.countFasta() >= 1000})
         .map{it ->
-            metaSuper5 = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "super5"]
+            def metaSuper5 = [id: it.name.replaceFirst(".fasta", ""), records: it.countFasta(), algorithm: "super5"]
             [metaSuper5, it]
         }
         .set{msaPepSegLargeCh}    

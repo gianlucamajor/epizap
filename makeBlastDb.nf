@@ -2,12 +2,7 @@ params.sequences = "${projectDir}/dataSet/iedb/epitope_table_04_08_22_T_Cruzi_16
 params.dbType = 'prot'
 params.outDir = 'blast/db'
 
-log.info """\
-    ===================================
-    sequences: ${params.sequences}
-    outdir: ${params.outDir}
-    ===================================
-    """.stripIndent()
+
 
 process make_blast_db {
     publishDir "${params.outDir}", mode: 'copy', overwrite: true
@@ -27,9 +22,16 @@ process make_blast_db {
 }
 
 workflow {
+    log.info """\
+    ===================================
+    sequences: ${params.sequences}
+    outdir: ${params.outDir}
+    ===================================
+    """.stripIndent()
+
     Channel.fromPath(params.sequences)
         .map{it ->
-            meta = [id: it.simpleName]
+            def meta = [id: it.simpleName]
             [meta, it]
         }
         .set{sequencesCh}
