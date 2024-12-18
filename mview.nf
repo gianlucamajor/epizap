@@ -5,18 +5,12 @@ params.outdir = "${params.baseDir}"
 
 include { MVIEW } from './modules/local/mview/main.nf'
 
-def logMsg(){
-    log.info """\
-    ========================================================
-    MSA Files = ${params.msaFiles}
-    ========================================================
-    """.stripIndent()
-}
+workflow mview {
+    take:
+    msaChn
 
-workflow{
-    logMsg()
-    Channel.fromPath(params.msaFiles)
-    .map{ it ->
+    main:
+    msaChn.map{ it ->
         def fnTokens = it.fileName.toString() - "control_and_chagasic_patients_" //remove prefix string
         fnTokens = fnTokens - "-msa.msc" // remove sufix string
         fnTokens = fnTokens.replace("_", "-")
@@ -25,4 +19,7 @@ workflow{
     }.set{msas}
 
     MVIEW(msas)
+
+    emit:
+    MVIEW.out
 }

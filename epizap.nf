@@ -8,6 +8,9 @@ params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
 
 include { mapper } from "./mapper"
 include { segmentRetriever } from "./segment_retriever"
+include { msa } from "./msa"
+include { mview } from "./mview"
+include { predicator } from "./predicator"
 include { consensusBuilder } from './consensus_builder'
 include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
 include { preEpitopeRetriever } from './pre_epitope_retriever'
@@ -40,10 +43,16 @@ log.info """\
     segmentRetriever(mapping, params.peptides)
         .set{peptidesBySegments}
     
-    consensusBuilder(peptidesBySegments)
+    // consensusBuilder(peptidesBySegments)
+    msa(peptidesBySegments)
+
+    mview(msa.out)
+    predicator(mview.out)
+
+
     lonelyPeptideRetriever(peptidesBySegments)
 
-    lonelyPeptideRetriever.out.mix(consensusBuilder.out)
+    lonelyPeptideRetriever.out.mix(predicator.out)
         .set{preEpitopes}
         
     preEpitopeRetriever(preEpitopes)
