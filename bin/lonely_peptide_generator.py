@@ -23,7 +23,7 @@ def main(files:click.Path, outdir, threads:int):
 def _rename_record_id(file):
     file_name = os.path.splitext(os.path.basename(file))[0]
     record = _read_lonely_fasta(file)
-    record.id = "_".join([file_name, record.id])
+    record.id = "-".join([file_name, record.id])
     return record
 
 def _write_output_file(sequences, output_file_name):
