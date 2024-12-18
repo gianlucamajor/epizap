@@ -1,7 +1,7 @@
 
 process MAX_SCORE_MAPPING_EXTRACTOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
-    label 'one_cpu'
+    label 'few_cpu'
     tag "${meta.id}"
     errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
 

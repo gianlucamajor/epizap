@@ -1,7 +1,7 @@
 process PREDICATOR {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
     // tag "${meta.id}"
-    label "med_cpu_high_memory"
+    label "med_cpu"
     errorStrategy {task.attempt <= 3 ? 'retry' : 'ignore'}
     maxRetries 3
 
