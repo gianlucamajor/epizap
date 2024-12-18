@@ -83,7 +83,7 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     # output_file_name = get_output_file_name(segment_file)
     output_file_name = get_output_file_name(segment_file, outdir)
     
-    pickle.dump(s_graph, open(f"{output_file_name}-all.pickle", 'wb'))
+    pickle.dump(s_graph, open(f"{output_file_name}-graph.pickle", 'wb'))
     print("--- %s seconds ---" % (time.time() - start_time))
 
     print("drawing graph")
