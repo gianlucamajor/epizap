@@ -15,6 +15,6 @@ process SEQUENCE_EXTRACTOR {
     script:
     """
     mkdir peptides-segment
-    peptide_extractor.py  ${segmentFile} ${peptideFile} -o peptides-segment -pf ${metaSeg.id} -t ${task.cpus}
+    peptide_extractor.py  ${segmentFile} ${peptideFile} -o peptides-segment -t ${task.cpus}
     """
 }

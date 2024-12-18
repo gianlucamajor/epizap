@@ -39,7 +39,10 @@ def _setup_csv_field_size_limit():
     csv.field_size_limit(int(sys.maxsize/1000))
 
 def _create_output_file_name(outdir, prefix, segment_name, total_of_sequence):
-    return outdir + "/" + prefix + "_" + segment_name + "_" + str(total_of_sequence) + ".fasta"
+    if prefix:
+        return outdir + "/" + prefix + "_" + segment_name + "-" + str(total_of_sequence) + ".fasta"
+    else:
+        return outdir + "/" + segment_name + "-" + str(total_of_sequence) + ".fasta"
 
 
 def _read_mapped_segment_tsv(map_seg_file):
@@ -79,6 +82,7 @@ def _build_list_of_sequences_and_write_output(seq_id_list, prefix, segment_name,
     total_of_sequence = len(sequences)
     output_name = _create_output_file_name(outdir, prefix, segment_name, total_of_sequence)
     print(f"{total_of_sequence} sequences was found")
+    sequences.sort(key = lambda x: len(x.seq), reverse=True)
     _write_output_file_(sequences, output_name)
 
     return sequences
