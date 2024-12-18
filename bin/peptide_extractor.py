@@ -82,7 +82,7 @@ def _build_list_of_sequences_and_write_output(seq_id_list, prefix, segment_name,
     total_of_sequence = len(sequences)
     output_name = _create_output_file_name(outdir, prefix, segment_name, total_of_sequence)
     print(f"{total_of_sequence} sequences was found")
-    sequences.sort(key = lambda x: len(x.seq), reverse=True)
+    sequences.sort(key = lambda x: (len(x.seq), x.id), reverse=True)
     _write_output_file_(sequences, output_name)
 
     return sequences
