@@ -13,7 +13,7 @@ include { mview } from "./mview"
 include { predicator } from "./predicator"
 include { consensusBuilder } from './consensus_builder'
 include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
-include { preEpitopeRetriever } from './pre_epitope_retriever'
+include { msaCoreAndLonelyEpitopesJoiner } from './msa_core_and_lonely_epitopes_joiner.nf'
 
 workflow {
 
@@ -53,8 +53,8 @@ log.info """\
     lonelyPeptideRetriever(peptidesBySegments)
 
     lonelyPeptideRetriever.out.mix(predicator.out)
-        .set{preEpitopes}
+        .set{epitopesByMSACoreAndLonely}
         
-    preEpitopeRetriever(preEpitopes)
+    msaCoreAndLonelyEpitopesJoiner(epitopesByMSACoreAndLonely)
     
 }
