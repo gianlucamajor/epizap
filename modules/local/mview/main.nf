@@ -1,5 +1,6 @@
 process MVIEW {
     publishDir "${params.outdir}", mode: 'copy', overwrite: true
+    label 'few_cpu'
     tag "${meta.id}"
 
     input:
