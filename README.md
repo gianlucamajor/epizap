@@ -26,9 +26,9 @@ docker pull gianlucamajor/epizap:v0.2.0-alpha
 ### Quick Start 
 
 
-
+```
 nextflow epizap.nf --reads dataSet/k-dna-insert-reads/CCC_severe_a.fastqnextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq
-
+```
 
 #### Expected result
 ```
