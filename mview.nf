@@ -11,9 +11,7 @@ workflow mview {
 
     main:
     msaChn.map{ it ->
-        def fnTokens = it.fileName.toString() - "control_and_chagasic_patients_" //remove prefix string
-        fnTokens = fnTokens - "-msa.msc" // remove sufix string
-        fnTokens = fnTokens.replace("_", "-")
+        def fnTokens = it.fileName.toString() - "-msa.msc"
         def metaMap = [id:fnTokens]
         [metaMap, it]
     }.set{msas}
