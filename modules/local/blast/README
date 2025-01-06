@@ -1,0 +1,4 @@
+# Blast Module (not part of the official pipeline)
+
+This module handles the Blast functionality and could be used to evaluate results, but it is not part of the official pipeline.
+
