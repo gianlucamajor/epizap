@@ -11,7 +11,6 @@ include { segmentRetriever } from "./segment_retriever"
 include { msa } from "./msa"
 include { mview } from "./mview"
 include { predicator } from "./predicator"
-include { consensusBuilder } from './consensus_builder'
 include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
 include { msaCoreAndLonelyEpitopesJoiner } from './msa_core_and_lonely_epitopes_joiner.nf'
 
@@ -42,8 +41,6 @@ log.info """\
 
     segmentRetriever(mapping, params.peptides)
         .set{peptidesBySegments}
-    
-    // consensusBuilder(peptidesBySegments)
     msa(peptidesBySegments)
 
     mview(msa.out)
