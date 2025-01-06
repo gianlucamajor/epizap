@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging.handlers
 import sys
 import csv
 import os
@@ -12,6 +13,7 @@ import click
 import networkx as nx
 import matplotlib.pyplot as plt
 import pickle
+import logging
 
 
 TAB_DELIM="\t"
@@ -25,17 +27,22 @@ AVG_MAPQ=6
 MEDIAN_MAPQ=7
 LIST_OF_READS=8
 
+logger = logging.getLogger("AMC")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 @click.command(help="Aim of this program is compute adjacency matrix from a list of segments...")
 @click.argument("segment_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option("--threshold", "-t", type=float, default=1, help="The min value [between 0.00 and 1] to create an EDGE between two NODES.")
 @click.option("--processors", "-p", type=int, default=2)
 def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors:int):
+   
+    
     start_time = time.time()
     _setup_csv_field_size_limit()
     segments = []
     
-    print("staring read CSV file")
+    logger.info("starting read CSV file")
 
     
     line = get_next_line(segment_file)
@@ -48,49 +55,58 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     t.join()
 
             
-    print("Ending of Read CSV file")
-    print("--- %s seconds ---" % (time.time() - start_time))
-
-    print("Starting sorting segments")
+    logger.info("Ending of Read CSV file")
+    logger.info("--- %s seconds ---" % (time.time() - start_time))
+    logger.info("Starting sorting segments")
+    logger.info("Starting sorting segments")
 
     segments.sort(key=Segment.get_name, reverse=False)
-    segments_copy = segments.copy()
 
-    print("Ending of sorting segments")
-    print("--- %s seconds ---" % (time.time() - start_time))
+    logger.info("Ending of sorting segments")
+    logger.info("--- %s seconds ---" % (time.time() - start_time))
 
-    print("Starting graph handler")
+    logger.info("Starting graph handler")
     s_graph = nx.Graph()
 
-    print("adding nodes")
+    logger.info("adding nodes")
     for s in segments:
-        s_graph.add_node(s.get_name())
+        s_graph.add_node(s.get_name(), reads=s.get_set_of_reads())
 
-    print("--- %s seconds ---" % (time.time() - start_time))
-    print("search and adding edges")
-    for idx, s in enumerate(segments):
-        for sc in segments_copy:
-            set_shared = s.get_set_of_reads().intersection(sc.get_set_of_reads())
-            p_shared = len(set_shared) / len(s.get_set_of_reads())
-            # print(p_shared)
-            if s.get_name() != sc.get_name() and p_shared >= threshold: # there is a edge
-                s_graph.add_edge(s.get_name(), sc.get_name())
+    logger.info("--- %s seconds ---" % (time.time() - start_time))
+    logger.info("search and adding edges")
+    segment_reads = {s.get_name(): s.get_set_of_reads() for s in segments}
+    for s_name, s_reads in segment_reads.items():
+        for sc_name, sc_reads in segment_reads.items():
+            if s_name != sc_name:
+                set_shared = s_reads.intersection(sc_reads)
+                p_shared = len(set_shared) / len(s_reads)
+                if p_shared >= threshold:  # there is an edge
+                    s_graph.add_edge(s_name, sc_name)
     
-    print(":", s_graph)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    logger.info("Graph: %s", s_graph)
+    logger.info("--- %s seconds ---" % (time.time() - start_time))
 
-    print("saving graph on file")
+    logger.info("saving graph on file")
     # output_file_name = get_output_file_name(segment_file)
     output_file_name = get_output_file_name(segment_file, outdir)
     
     pickle.dump(s_graph, open(f"{output_file_name}-graph.pickle", 'wb'))
-    print("--- %s seconds ---" % (time.time() - start_time))
+    logger.info("--- %s seconds ---" % (time.time() - start_time))
 
-    print("drawing graph")
+    logger.info("drawing graph")
     nx.draw_networkx(s_graph)
     plt.draw()
     print("--- %s seconds ---" % (time.time() - start_time))
     plt.show()
+
+def process_segment_pair(args):
+        s_name, s_reads, sc_name, sc_reads, threshold = args
+        if s_name != sc_name:
+            set_shared = s_reads.intersection(sc_reads)
+            p_shared = len(set_shared) / len(s_reads)
+            if p_shared >= threshold:  # there is an edge
+                return (s_name, sc_name)
+        return None
 
 def get_next_line(segment_file):
     with open(segment_file) as file:
