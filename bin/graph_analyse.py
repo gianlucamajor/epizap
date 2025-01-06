@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from model.Segment import Segment
+import os 
 
 import click
 import networkx as nx
@@ -12,44 +13,29 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 @click.command(help="Aim of this program is ...")
-def main():
-
-    # get_lonely()
-    # get_mt_graph()
-
-    epitopes = get_epitopes()
-    get_graph(epitopes)
-
-def get_lonely():
-    lonely = _rename_ids_and_names(
-        "/home/gianluca/workspace/epizap/results_21_11_2024/lonely/lonely_peptides.fasta",
-        "/home/gianluca/workspace/epizap/results_21_11_2024/lonely/lonely_peptides_renamed.fasta"
-        )
-    print(lonely)
-
-def get_mt_graph():
-    G = pickle.load(open('/home/gianluca/workspace/epizap/results/segments/CCC_mild_a_mapped-segment-all.pickle', 'rb'))
-    # G = pickle.load(open('/home/gianluca/workspace/epizap/results/segments/asympto_b_mapped-segment-half.pickle', 'rb'))
+@click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option("--segment", "-s", type=click.Path(exists=True, file_okay=True, dir_okay=False), default=None)
+@click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
+def main(graph_file:click.Path, epitopes_file:click.Path, segment:click.Path, outdir:click.Path):
     
-    print(G)
+    output_file = get_output_file_name(epitopes_file, outdir)
+    epitopes = get_epitopes(epitopes_file)
+    get_graph(graph_file, epitopes, output_file)
 
-    nx.draw_spring(G, with_labels=True)
-    plt.show()
+
+
+def get_epitopes(ept_file):
+    epitopes_dict = _get_dic_from_fasta(ept_file)
     
-    # print(nx.clustering(G))
-    # print(G.nodes())
-
-    # for n in G.nodes():
-    #     cc = nx.node_connected_component(G,n)
-    #     print(n, len(cc))
-
-def get_epitopes():
-    epitopes_dict = _get_dic_from_fasta("/home/gianluca/workspace/epizap/results_21_11_2024/epitopes/msa-and-lonely-epitopes.fasta")
+    # >CM026586.1-734200-734540-29532-677-0
+    # >control_and_chagasic_patients_CM026583.1-1048335-1048450-3-1-114361
+    
     ept_by_segments = {}
     for k in epitopes_dict:
         complete_segment_id  = epitopes_dict[k].id
         seq = epitopes_dict[k].seq
-        seg_inserts_and_pep_id = complete_segment_id.rsplit("-",1)[0]
+        seg_inserts_and_pep_id = complete_segment_id.rsplit("-",1)[0] 
         ept_id = complete_segment_id.rsplit("-",1)[1]
         seg_inserts_id = seg_inserts_and_pep_id.rsplit("-",1)[0]
 
@@ -79,9 +65,11 @@ def get_epitopes():
         
     
 
-def get_graph(epitopes):
-    G = pickle.load(open('/home/gianluca/workspace/epizap/results_05_11_2024/segments/control_and_chagasic_patients-segments-on-same-strand-all.pickle', 'rb'))
-    print(G)
+def get_graph(graph_file, epitopes, output_file):
+    G = pickle.load(open(graph_file, 'rb'))
+    print("Graph:",G)
+
+    
     
     # print(nx.clustering(G))
     # print(G.nodes())
@@ -109,14 +97,14 @@ def get_graph(epitopes):
         # print(len(cc_s))
     final_ept_list = []
     final_ept_set = set()
-    for idx, graph in enumerate(S):
+    for idx, sub_graph in enumerate(S):
         # each graph is a coonected componet
         # 2200
         # if(idx == 7000):
         # if "CM026617.1-197083-197351-497-27" in graph.nodes(): 
         epts = []
         epts_seq_set_of_graph = set()
-        for n in graph.nodes():
+        for n in sub_graph.nodes():
             epts_from_segment = epitopes.get(n)
             epts.append(epts_from_segment)
 
@@ -130,11 +118,18 @@ def get_graph(epitopes):
         # print(idx, epts)
         # if "CM026590.1-343373-343722-323" in graph.nodes(): 
 
-        # print(idx, epts_seq_set_of_graph)
-        # nx.draw_spring(graph, with_labels=True)
-        # plt.show()
-
-        # print(idx, len(graph.nodes()), len(graph.edges()))  
+        
+        if idx == 5973:
+            print(idx, epts_seq_set_of_graph, sub_graph.nodes())
+            nx.draw_spring(sub_graph, with_labels=True)
+            plt.show()
+        print(idx, len(sub_graph.nodes()), len(sub_graph.edges()), len(epts_seq_set_of_graph))  
+        unique_reads = set()
+        for n in sub_graph.nodes(data=True):
+            unique_reads.update(n[1].get('reads', []))
+        print(f"Total unique reads in subgraph: {len(unique_reads)}")
+        # for n in sub_graph.nodes(data=True):
+        #     print(f"Node: {n[0]}, Reads: {len(n[1].get('reads'))}")
 
     
     total_of_epitopes = 0
@@ -146,7 +141,7 @@ def get_graph(epitopes):
         total_of_epitopes += len(conex_component_ept_list)
     
     #/home/gianluca/workspace/epizap/results_21_11_2024/epitopes/epitopes-final-list.fasta
-    _write_output_file_(epitopes_sequence_final, "/home/gianluca/workspace/epizap/results_21_11_2024/epitopes/epitopes-final-list.fasta")
+    _write_output_file_(epitopes_sequence_final, output_file)
 
     # print(total_of_epitopes)
     print(total_of_epitopes)
@@ -159,6 +154,16 @@ def get_graph(epitopes):
     # # plt.draw()
     # plt.show()
 
+def get_output_file_name(input, outdir):
+    outdir_path = os.path.dirname(input)
+    if outdir:
+        outdir_path = outdir
+
+    # input_file_name =  os.path.basename(input)
+    # input_file_name_splited =  os.path.splitext(input_file_name)
+    # output_file_base_name = input_file_name_splited[0]
+    output_file_base_name = "epitopes-cc-graph.fasta"
+    return os.path.join(outdir_path, output_file_base_name) 
 
 def _rename_ids_and_names(file, output):
     sequences = []
