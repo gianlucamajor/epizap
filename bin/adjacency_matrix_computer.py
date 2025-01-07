@@ -87,26 +87,17 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     logger.info("--- %s seconds ---" % (time.time() - start_time))
 
     logger.info("saving graph on file")
-    # output_file_name = get_output_file_name(segment_file)
     output_file_name = get_output_file_name(segment_file, outdir)
     
     pickle.dump(s_graph, open(f"{output_file_name}-graph.pickle", 'wb'))
     logger.info("--- %s seconds ---" % (time.time() - start_time))
 
-    logger.info("drawing graph")
-    nx.draw_networkx(s_graph)
-    plt.draw()
-    print("--- %s seconds ---" % (time.time() - start_time))
-    plt.show()
+    # logger.info("drawing graph")
+    # nx.draw_networkx(s_graph)
+    # plt.draw()
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    # plt.show()
 
-def process_segment_pair(args):
-        s_name, s_reads, sc_name, sc_reads, threshold = args
-        if s_name != sc_name:
-            set_shared = s_reads.intersection(sc_reads)
-            p_shared = len(set_shared) / len(s_reads)
-            if p_shared >= threshold:  # there is an edge
-                return (s_name, sc_name)
-        return None
 
 def get_next_line(segment_file):
     with open(segment_file) as file:

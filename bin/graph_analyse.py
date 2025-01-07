@@ -19,7 +19,7 @@ from Bio.SeqRecord import SeqRecord
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 def main(graph_file:click.Path, epitopes_file:click.Path, segment:click.Path, outdir:click.Path):
     
-    output_file = get_output_file_name(epitopes_file, outdir)
+    output_file = _get_output_file_name(epitopes_file, outdir)
     epitopes = get_epitopes(epitopes_file)
     get_graph(graph_file, epitopes, output_file)
 
@@ -57,9 +57,6 @@ def get_epitopes(ept_file):
             ept_element['seq'] = str(seq)
             ept_seg.append(ept_element)
         
-    # print(ept_by_segments.get("WNWZ01000402.1-22632-22735-2"))
-    # print(ept_by_segments.get("CM026620.1-161873-162157-827"))
-    # print(ept_by_segments.get("WNWZ01000039.1-97394-97488-252"))
     return ept_by_segments
         
         
@@ -68,40 +65,23 @@ def get_epitopes(ept_file):
 def get_graph(graph_file, epitopes, output_file):
     G = pickle.load(open(graph_file, 'rb'))
     print("Graph:",G)
-
     
-    
-    # print(nx.clustering(G))
-    # print(G.nodes())
-
-    # for n in G.nodes():
-    #     cc = nx.node_connected_component(G,n)
-    #     print(n, len(cc))
-
-    # cc = nx.node_connected_component(G, "CM026603.1-94787-94954-11")
     print(nx.number_connected_components(G))
     
     all_cc = nx.connected_components(G)
 
-    # largest = G.subgraph(max(nx.connected_components(G), key=len)).copy()
-    # print(len(largest))
-
     S = []
 
     all_cc_sorted = sorted(nx.connected_components(G), key=len, reverse=False)
-    # # # [len(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
 
     for cc_s in all_cc_sorted:
         if len(cc_s) > 0:
             S.append(G.subgraph(cc_s))
-        # print(len(cc_s))
+            
     final_ept_list = []
     final_ept_set = set()
+    total_of_unique_reads_on_cc = 0
     for idx, sub_graph in enumerate(S):
-        # each graph is a coonected componet
-        # 2200
-        # if(idx == 7000):
-        # if "CM026617.1-197083-197351-497-27" in graph.nodes(): 
         epts = []
         epts_seq_set_of_graph = set()
         for n in sub_graph.nodes():
@@ -114,20 +94,21 @@ def get_graph(graph_file, epitopes, output_file):
                     final_ept_set.add(e['seq'])
     
         final_ept_list.append(epts_seq_set_of_graph)
-            
-        # print(idx, epts)
-        # if "CM026590.1-343373-343722-323" in graph.nodes(): 
-
         
-        if idx == 5973:
-            print(idx, epts_seq_set_of_graph, sub_graph.nodes())
-            nx.draw_spring(sub_graph, with_labels=True)
-            plt.show()
+        ## print the number of nodes, edges and epitopes in the connected component
+
+        # if idx == 5973:
+        #     print(idx, epts_seq_set_of_graph, sub_graph.nodes())
+        #     nx.draw_spring(sub_graph, with_labels=True)
+        #     plt.show()
+
+
         print(idx, len(sub_graph.nodes()), len(sub_graph.edges()), len(epts_seq_set_of_graph))  
         unique_reads = set()
         for n in sub_graph.nodes(data=True):
             unique_reads.update(n[1].get('reads', []))
         print(f"Total unique reads in subgraph: {len(unique_reads)}")
+        total_of_unique_reads_on_cc += len(unique_reads) 
         # for n in sub_graph.nodes(data=True):
         #     print(f"Node: {n[0]}, Reads: {len(n[1].get('reads'))}")
 
@@ -137,50 +118,26 @@ def get_graph(graph_file, epitopes, output_file):
     for idx_cc, conex_component_ept_list in enumerate(final_ept_list):
         for idx_segment, ept in enumerate(conex_component_ept_list):
             epitopes_sequence_final.append(_create_seq_record(ept, idx_cc,idx_segment))
-            # print(idx_cc, idx_segment, ept)
         total_of_epitopes += len(conex_component_ept_list)
     
-    #/home/gianluca/workspace/epizap/results_21_11_2024/epitopes/epitopes-final-list.fasta
     _write_output_file_(epitopes_sequence_final, output_file)
 
     # print(total_of_epitopes)
     print(total_of_epitopes)
+    print(total_of_unique_reads_on_cc)
     # print(len(final_ept_set))
     # print(len(final_ept_list))
        
    
-    
-    # nx.draw_spring(S[0], with_labels=True)
-    # # plt.draw()
-    # plt.show()
-
-def get_output_file_name(input, outdir):
+ 
+def _get_output_file_name(input, outdir):
     outdir_path = os.path.dirname(input)
     if outdir:
         outdir_path = outdir
 
-    # input_file_name =  os.path.basename(input)
-    # input_file_name_splited =  os.path.splitext(input_file_name)
-    # output_file_base_name = input_file_name_splited[0]
     output_file_base_name = "epitopes-cc-graph.fasta"
     return os.path.join(outdir_path, output_file_base_name) 
 
-def _rename_ids_and_names(file, output):
-    sequences = []
-    list_of_sequence = _read_fasta(file)
-    for seq_id in list_of_sequence:
-        try:
-            r = list_of_sequence[seq_id]
-            id = r.id
-            name = r.name
-            r.id = id.replace("control_and_chagasic_patients_", "").replace("_", "-") 
-            r.name = name.replace("control_and_chagasic_patients_", "").replace("_", "-") 
-            r.description = ""
-            sequences.append(r)
-        except Exception as e:
-            print("Ops", e, "occurred")
-    _write_output_file_(sequences, output)
-    return sequences
 
 def _get_dic_from_fasta(file):
     p_dic = _read_fasta(file)
