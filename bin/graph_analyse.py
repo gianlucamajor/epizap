@@ -15,9 +15,8 @@ from Bio.SeqRecord import SeqRecord
 @click.command(help="Aim of this program is ...")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
-@click.option("--segment", "-s", type=click.Path(exists=True, file_okay=True, dir_okay=False), default=None)
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
-def main(graph_file:click.Path, epitopes_file:click.Path, segment:click.Path, outdir:click.Path):
+def main(graph_file:click.Path, epitopes_file:click.Path, outdir:click.Path):
     
     output_file = _get_output_file_name(epitopes_file, outdir)
     epitopes = get_epitopes(epitopes_file)
