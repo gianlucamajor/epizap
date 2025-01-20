@@ -19,6 +19,9 @@ class Segment():
     def get_name(self) -> str:
         return f"{self.scaffod}-{self.start}-{self.end}-{len(self.reads)}"
     
+    def get_complete_name(self) -> str:
+        return f"{self.scaffod}-{self.start}-{self.end}-{len(self.reads)}-{len(self.get_distinct_peptide_ids())}"
+    
     def get_peptide_ids(self) -> list:
         return [r.split('_')[1] for r in self.reads]
     

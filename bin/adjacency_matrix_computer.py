@@ -60,7 +60,7 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     logger.info("Starting sorting segments")
     logger.info("Starting sorting segments")
 
-    segments.sort(key=Segment.get_name, reverse=False)
+    segments.sort(key=Segment.get_complete_name, reverse=False)
 
     logger.info("Ending of sorting segments")
     logger.info("--- %s seconds ---" % (time.time() - start_time))
@@ -70,11 +70,11 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
 
     logger.info("adding nodes")
     for s in segments:
-        s_graph.add_node(s.get_name(), reads=s.get_set_of_reads())
+        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads())
 
     logger.info("--- %s seconds ---" % (time.time() - start_time))
     logger.info("search and adding edges")
-    segment_reads = {s.get_name(): s.get_set_of_reads() for s in segments}
+    segment_reads = {s.get_complete_name(): s.get_set_of_reads() for s in segments}
     for s_name, s_reads in segment_reads.items():
         for sc_name, sc_reads in segment_reads.items():
             if s_name != sc_name:
