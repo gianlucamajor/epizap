@@ -163,7 +163,7 @@ def _create_mview_link(segment):
     lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
     mview_url = "mview/"
    
-    base_url = f"{lbi_host}/{mview_url}"
+    base_url = f"{local_host}/{mview_url}"
 
     parts = segment.split('-')
     if len(parts) < 5:
@@ -189,7 +189,7 @@ def _create_igv_link(segment_id):
     lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
     igv_webapp = "igv-webapp/?locus="
 
-    base_url = f"{lbi_host}/{igv_webapp}"
+    base_url = f"{local_host}/{igv_webapp}"
     
     
     parts = segment_id.split('-')
