@@ -72,6 +72,8 @@ mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus
 ### IGV-webapp
 
 npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
+http://localhost:8080/igv-webapp/?locus=CM026600.1:31354-31391
+
 ### Extract features from GFF
 
 bedtools intersect -a /home/gianluca/workspace/epizap/results_21_11_2024/segments/control_and_chagasic_patients_mapped-segment.tsv -b genomic.gff -wb | grep "CDS" | less -S
