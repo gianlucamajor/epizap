@@ -19,5 +19,7 @@ workflow segmentRetriever{
     SEQUENCE_EXTRACTOR(SEGMENT_EXTRACTOR.out, peptidesCh)
     
     emit:
-    SEQUENCE_EXTRACTOR.out
+    segments = SEGMENT_EXTRACTOR.out
+    peptidesFromSegment = SEQUENCE_EXTRACTOR.out
+    
 }

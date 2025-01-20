@@ -3,16 +3,18 @@ params.peptides = "${projectDir}/dataSet/peptides/kDNA-aa-in-frame.fasta"
 params.ref = "${projectDir}/dataSet/ref/y_strain_minicircles.fasta"
 params.outdir = "results"
 params.mapper = ""
+params.graph_segment_threshold = 1.00
 
 params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
 
 include { mapper } from "./mapper"
 include { segmentRetriever } from "./segment_retriever"
+include { segmentGraphComputer } from './segment_graph_computer'
 include { msa } from "./msa"
 include { mview } from "./mview"
 include { predicator } from "./predicator"
 include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
-include { msaCoreAndLonelyEpitopesJoiner } from './msa_core_and_lonely_epitopes_joiner.nf'
+include { msaCoreAndLonelyEpitopesJoiner } from './msa_core_and_lonely_epitopes_joiner'
 
 workflow {
 
@@ -21,6 +23,7 @@ log.info """\
     Reads: ${params.reads}
     Peptides: ${params.peptides}
     Reference: ${params.ref}
+    Graph Segment threshold: ${params.graph_segment_threshold}
     Outdir: ${params.outdir}
     Peptiede Segment: ${params.pepSeg}
     Mapper file: ${params.mapper}
@@ -40,14 +43,15 @@ log.info """\
     }
 
     segmentRetriever(mapping, params.peptides)
-        .set{peptidesBySegments}
-    msa(peptidesBySegments)
+        .set{segmentRetriverResult}
+    msa(segmentRetriverResult.peptidesFromSegment)
+    segmentGraphComputer(segmentRetriverResult.segments)
 
     mview(msa.out)
     predicator(mview.out)
 
 
-    lonelyPeptideRetriever(peptidesBySegments)
+    lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
 
     lonelyPeptideRetriever.out.mix(predicator.out)
         .set{epitopesByMSACoreAndLonely}

@@ -27,10 +27,10 @@ AVG_MAPQ=6
 MEDIAN_MAPQ=7
 LIST_OF_READS=8
 
-logger = logging.getLogger("AMC")
+logger = logging.getLogger("SGC")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-@click.command(help="Aim of this program is compute adjacency matrix from a list of segments...")
+@click.command(help="Aim of this program is to create a Graph in witch the Nodes are the segments and the Edges indicate that there is a percentage (--threshold) of reads shared between two segments.")
 @click.argument("segment_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option("--threshold", "-t", type=float, default=1, help="The min value [between 0.00 and 1] to create an EDGE between two NODES.")
@@ -41,7 +41,8 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     start_time = time.time()
     _setup_csv_field_size_limit()
     segments = []
-    
+
+    logger.info(f"threshold value setup: {threshold}")
     logger.info("starting read CSV file")
 
     
