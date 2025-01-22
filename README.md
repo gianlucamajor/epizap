@@ -72,6 +72,8 @@ mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus
 ### IGV-webapp
 
 npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
+http://localhost:8080/igv-webapp/?locus=CM026600.1:31354-31391
+
 ### Extract features from GFF
 
 bedtools intersect -a /home/gianluca/workspace/epizap/results_21_11_2024/segments/control_and_chagasic_patients_mapped-segment.tsv -b genomic.gff -wb | grep "CDS" | less -S
@@ -83,3 +85,16 @@ bedtools intersect -a /home/gianluca/workspace/epizap/results_21_11_2024/segment
 ### Run
 
 nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna --outdir "results_24_08_2024"
+
+
+### RUN CD-HIT VERIFY EPITOPE FINAL LIST RESULT 
+
+cd-hit -i epitopes-cc-graph.fasta -o epitopes-cc-graph-cdhit-100 -c 1.00 -l 4 -n 5 -d 0 -T 10 -M 2000
+#### Given tha the min length of epitope predicted by epizap is 5 than is important define -l parameter as 4. 
+
+-c 1.0, means 100% identity, is the clustering threshold
+-l	length of throw_away_sequences, default 10
+-n 5 is the word size
+-d 0 use sequence name in fasta header till the first white space
+-M 16000, to use 16GB RAM
+-T 8, to use 8 threads

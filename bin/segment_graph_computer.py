@@ -27,10 +27,10 @@ AVG_MAPQ=6
 MEDIAN_MAPQ=7
 LIST_OF_READS=8
 
-logger = logging.getLogger("AMC")
+logger = logging.getLogger("SGC")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-@click.command(help="Aim of this program is compute adjacency matrix from a list of segments...")
+@click.command(help="Aim of this program is to create a Graph in witch the Nodes are the segments and the Edges indicate that there is a percentage (--threshold) of reads shared between two segments.")
 @click.argument("segment_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option("--threshold", "-t", type=float, default=1, help="The min value [between 0.00 and 1] to create an EDGE between two NODES.")
@@ -41,7 +41,8 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     start_time = time.time()
     _setup_csv_field_size_limit()
     segments = []
-    
+
+    logger.info(f"threshold value setup: {threshold}")
     logger.info("starting read CSV file")
 
     
@@ -60,7 +61,7 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     logger.info("Starting sorting segments")
     logger.info("Starting sorting segments")
 
-    segments.sort(key=Segment.get_name, reverse=False)
+    segments.sort(key=Segment.get_complete_name, reverse=False)
 
     logger.info("Ending of sorting segments")
     logger.info("--- %s seconds ---" % (time.time() - start_time))
@@ -70,11 +71,11 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
 
     logger.info("adding nodes")
     for s in segments:
-        s_graph.add_node(s.get_name(), reads=s.get_set_of_reads())
+        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads())
 
     logger.info("--- %s seconds ---" % (time.time() - start_time))
     logger.info("search and adding edges")
-    segment_reads = {s.get_name(): s.get_set_of_reads() for s in segments}
+    segment_reads = {s.get_complete_name(): s.get_set_of_reads() for s in segments}
     for s_name, s_reads in segment_reads.items():
         for sc_name, sc_reads in segment_reads.items():
             if s_name != sc_name:
@@ -87,26 +88,17 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
     logger.info("--- %s seconds ---" % (time.time() - start_time))
 
     logger.info("saving graph on file")
-    # output_file_name = get_output_file_name(segment_file)
     output_file_name = get_output_file_name(segment_file, outdir)
     
     pickle.dump(s_graph, open(f"{output_file_name}-graph.pickle", 'wb'))
     logger.info("--- %s seconds ---" % (time.time() - start_time))
 
-    logger.info("drawing graph")
-    nx.draw_networkx(s_graph)
-    plt.draw()
-    print("--- %s seconds ---" % (time.time() - start_time))
-    plt.show()
+    # logger.info("drawing graph")
+    # nx.draw_networkx(s_graph)
+    # plt.draw()
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    # plt.show()
 
-def process_segment_pair(args):
-        s_name, s_reads, sc_name, sc_reads, threshold = args
-        if s_name != sc_name:
-            set_shared = s_reads.intersection(sc_reads)
-            p_shared = len(set_shared) / len(s_reads)
-            if p_shared >= threshold:  # there is an edge
-                return (s_name, sc_name)
-        return None
 
 def get_next_line(segment_file):
     with open(segment_file) as file:

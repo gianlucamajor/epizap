@@ -19,12 +19,19 @@ class Segment():
     def get_name(self) -> str:
         return f"{self.scaffod}-{self.start}-{self.end}-{len(self.reads)}"
     
+    def get_complete_name(self) -> str:
+        return f"{self.scaffod}-{self.start}-{self.end}-{len(self.reads)}-{len(self.get_distinct_peptide_ids())}"
+    
     def get_peptide_ids(self) -> list:
         return [r.split('_')[1] for r in self.reads]
     
     def get_distinct_peptide_ids(self) -> set:
         return set(self.get_peptide_ids())
-    
+    """
+    NOTE: The number of reads refers to the number of mapping on the segment, 
+    as the same read can map multiple times, including on the same segment. 
+    Therefore  number of distinct reads present on the segment is a Set of reads. 
+    """
     def get_set_of_reads(self) -> set:
         return set(self.reads)
     

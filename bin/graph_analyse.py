@@ -15,11 +15,10 @@ from Bio.SeqRecord import SeqRecord
 @click.command(help="Aim of this program is ...")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
-@click.option("--segment", "-s", type=click.Path(exists=True, file_okay=True, dir_okay=False), default=None)
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
-def main(graph_file:click.Path, epitopes_file:click.Path, segment:click.Path, outdir:click.Path):
+def main(graph_file:click.Path, epitopes_file:click.Path, outdir:click.Path):
     
-    output_file = get_output_file_name(epitopes_file, outdir)
+    output_file = _get_output_file_name(epitopes_file, outdir)
     epitopes = get_epitopes(epitopes_file)
     get_graph(graph_file, epitopes, output_file)
 
@@ -39,9 +38,9 @@ def get_epitopes(ept_file):
         ept_id = complete_segment_id.rsplit("-",1)[1]
         seg_inserts_id = seg_inserts_and_pep_id.rsplit("-",1)[0]
 
-        # print(seg_inserts_id, ept_id)
+        # print(complete_segment_id, seg_inserts_and_pep_id, seg_inserts_id, ept_id)
 
-        ept_seg = ept_by_segments.get(seg_inserts_id)
+        ept_seg = ept_by_segments.get(seg_inserts_and_pep_id)
         if not ept_seg:
             epts = []
             
@@ -49,7 +48,7 @@ def get_epitopes(ept_file):
             ept_element['id'] = ept_id
             ept_element['seq'] = str(seq)
             epts.append(ept_element)
-            ept_by_segments[seg_inserts_id] = epts
+            ept_by_segments[seg_inserts_and_pep_id] = epts
 
         else: 
             ept_element = {}
@@ -57,9 +56,6 @@ def get_epitopes(ept_file):
             ept_element['seq'] = str(seq)
             ept_seg.append(ept_element)
         
-    # print(ept_by_segments.get("WNWZ01000402.1-22632-22735-2"))
-    # print(ept_by_segments.get("CM026620.1-161873-162157-827"))
-    # print(ept_by_segments.get("WNWZ01000039.1-97394-97488-252"))
     return ept_by_segments
         
         
@@ -67,41 +63,25 @@ def get_epitopes(ept_file):
 
 def get_graph(graph_file, epitopes, output_file):
     G = pickle.load(open(graph_file, 'rb'))
-    print("Graph:",G)
+    # print("Graph:",G)
+    # print(nx.number_connected_components(G))
 
-    
-    
-    # print(nx.clustering(G))
-    # print(G.nodes())
-
-    # for n in G.nodes():
-    #     cc = nx.node_connected_component(G,n)
-    #     print(n, len(cc))
-
-    # cc = nx.node_connected_component(G, "CM026603.1-94787-94954-11")
-    print(nx.number_connected_components(G))
+    print(F"CC idx \t Nodes \t Edges \t Epitopes \t Unique Reads")
     
     all_cc = nx.connected_components(G)
-
-    # largest = G.subgraph(max(nx.connected_components(G), key=len)).copy()
-    # print(len(largest))
 
     S = []
 
     all_cc_sorted = sorted(nx.connected_components(G), key=len, reverse=False)
-    # # # [len(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
 
     for cc_s in all_cc_sorted:
         if len(cc_s) > 0:
             S.append(G.subgraph(cc_s))
-        # print(len(cc_s))
+            
     final_ept_list = []
     final_ept_set = set()
+    total_of_unique_reads_on_cc = 0
     for idx, sub_graph in enumerate(S):
-        # each graph is a coonected componet
-        # 2200
-        # if(idx == 7000):
-        # if "CM026617.1-197083-197351-497-27" in graph.nodes(): 
         epts = []
         epts_seq_set_of_graph = set()
         for n in sub_graph.nodes():
@@ -114,20 +94,51 @@ def get_graph(graph_file, epitopes, output_file):
                     final_ept_set.add(e['seq'])
     
         final_ept_list.append(epts_seq_set_of_graph)
-            
-        # print(idx, epts)
-        # if "CM026590.1-343373-343722-323" in graph.nodes(): 
-
         
-        if idx == 5973:
+        ## START - print the number of nodes, edges and epitopes in the connected component
+        """
+        if idx == 6815:
+
+            unique_reads = set()
+            for n in sub_graph.nodes(data=True):
+                print("len:", len(n[1].get('reads', [])))
+                unique_reads.update(n[1].get('reads', []))
+
+            # To create a list of links to IGV  browser of segments and its insertions
+            igv_links = []
+            for n in sub_graph.nodes():
+                igv_links.append(_create_igv_link(n))
+            igv_links_str = ", ".join(igv_links)
+
             print(idx, epts_seq_set_of_graph, sub_graph.nodes())
+            # print(idx, len(sub_graph.nodes()), len(sub_graph.edges()), len(epts_seq_set_of_graph))  
+            print(F"{idx} \t {len(sub_graph.nodes())} \t {len(sub_graph.edges())} \t {len(epts_seq_set_of_graph)} \t {len(unique_reads)} \t {igv_links} \t {sub_graph.nodes()}")  
             nx.draw_spring(sub_graph, with_labels=True)
             plt.show()
-        print(idx, len(sub_graph.nodes()), len(sub_graph.edges()), len(epts_seq_set_of_graph))  
+        """
+        ## END - print the number of nodes, edges and epitopes in the connected component
+
+        
         unique_reads = set()
         for n in sub_graph.nodes(data=True):
             unique_reads.update(n[1].get('reads', []))
-        print(f"Total unique reads in subgraph: {len(unique_reads)}")
+        # CC index, number of nodes, number of edges, number of epitopes, number of unique reads
+        
+        # To create a list of links to IGV  browser of segments and its insertions and MView
+        igv_links = []
+        mview_links = []
+        for n in sub_graph.nodes():
+            igv_links.append(_create_igv_link(n))
+            mview_links.append(_create_mview_link(n))
+        igv_links_str = ", ".join(igv_links)
+        mview_links_str = ", ".join(mview_links)
+
+
+        print(F"{idx} \t {len(sub_graph.nodes())} \t {len(sub_graph.edges())} \t {len(epts_seq_set_of_graph)} \t {len(unique_reads)} \t {', '.join(epts_seq_set_of_graph)} \t {igv_links_str} \t {mview_links_str}")
+        
+        
+        # print(f"Total unique reads in subgraph: {len(unique_reads)}")
+        total_of_unique_reads_on_cc += len(unique_reads) 
         # for n in sub_graph.nodes(data=True):
         #     print(f"Node: {n[0]}, Reads: {len(n[1].get('reads'))}")
 
@@ -137,50 +148,64 @@ def get_graph(graph_file, epitopes, output_file):
     for idx_cc, conex_component_ept_list in enumerate(final_ept_list):
         for idx_segment, ept in enumerate(conex_component_ept_list):
             epitopes_sequence_final.append(_create_seq_record(ept, idx_cc,idx_segment))
-            # print(idx_cc, idx_segment, ept)
         total_of_epitopes += len(conex_component_ept_list)
     
-    #/home/gianluca/workspace/epizap/results_21_11_2024/epitopes/epitopes-final-list.fasta
     _write_output_file_(epitopes_sequence_final, output_file)
 
     # print(total_of_epitopes)
     print(total_of_epitopes)
+    print(total_of_unique_reads_on_cc)
     # print(len(final_ept_set))
     # print(len(final_ept_list))
-       
-   
-    
-    # nx.draw_spring(S[0], with_labels=True)
-    # # plt.draw()
-    # plt.show()
 
-def get_output_file_name(input, outdir):
+def _create_mview_link(segment):
+    local_host = "http://localhost:8080"
+    lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
+    mview_url = "mview/"
+   
+    base_url = f"{local_host}/{mview_url}"
+
+    parts = segment.split('-')
+    if len(parts) < 5:
+        raise ValueError("Invalid segment ID format")
+    
+    number_of_peptides = int(parts[4])
+    if number_of_peptides <= 1:
+        return "There is no MSA"
+    
+    msa_id = f"{parts[0]}-{parts[1]}-{parts[2]}-{parts[3]}-{number_of_peptides}"
+    return f"{base_url}{msa_id}.html"
+
+
+def _create_igv_link(segment_id):
+    """
+        Expected is received something like this:
+        CM026600.1-29631-29710-758
+        And return a link like this:
+        http://localhost:8080/igv-webapp/?locus=CM026600.1:29631-29710
+    """
+
+    local_host = "http://localhost:8080"
+    lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
+    igv_webapp = "igv-webapp/?locus="
+
+    base_url = f"{local_host}/{igv_webapp}"
+    
+    
+    parts = segment_id.split('-')
+    if len(parts) < 3:
+        raise ValueError("Invalid segment ID format")
+    locus = f"{parts[0]}:{parts[1]}-{parts[2]}"
+    return f"{base_url}{locus}"
+ 
+def _get_output_file_name(input, outdir):
     outdir_path = os.path.dirname(input)
     if outdir:
         outdir_path = outdir
 
-    # input_file_name =  os.path.basename(input)
-    # input_file_name_splited =  os.path.splitext(input_file_name)
-    # output_file_base_name = input_file_name_splited[0]
     output_file_base_name = "epitopes-cc-graph.fasta"
     return os.path.join(outdir_path, output_file_base_name) 
 
-def _rename_ids_and_names(file, output):
-    sequences = []
-    list_of_sequence = _read_fasta(file)
-    for seq_id in list_of_sequence:
-        try:
-            r = list_of_sequence[seq_id]
-            id = r.id
-            name = r.name
-            r.id = id.replace("control_and_chagasic_patients_", "").replace("_", "-") 
-            r.name = name.replace("control_and_chagasic_patients_", "").replace("_", "-") 
-            r.description = ""
-            sequences.append(r)
-        except Exception as e:
-            print("Ops", e, "occurred")
-    _write_output_file_(sequences, output)
-    return sequences
 
 def _get_dic_from_fasta(file):
     p_dic = _read_fasta(file)
