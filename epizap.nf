@@ -3,7 +3,9 @@ params.peptides = "${projectDir}/dataSet/peptides/kDNA-aa-in-frame.fasta"
 params.ref = "${projectDir}/dataSet/ref/y_strain_minicircles.fasta"
 params.outdir = "results"
 params.mapper = ""
+params.annotation = ""
 params.graph_segment_threshold = 1.00
+
 
 params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
 
@@ -23,6 +25,7 @@ log.info """\
     Reads: ${params.reads}
     Peptides: ${params.peptides}
     Reference: ${params.ref}
+    Annotation: ${params.annotation}
     Graph Segment threshold: ${params.graph_segment_threshold}
     Outdir: ${params.outdir}
     Peptiede Segment: ${params.pepSeg}
@@ -42,7 +45,7 @@ log.info """\
             }.set{mapping}
     }
 
-    segmentRetriever(mapping, params.peptides)
+    segmentRetriever(mapping, params.peptides, params.annotation)
         .set{segmentRetriverResult}
     msa(segmentRetriverResult.peptidesFromSegment)
     segmentGraphComputer(segmentRetriverResult.segments)
