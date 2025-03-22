@@ -90,6 +90,8 @@ nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert
 ### RUN CD-HIT VERIFY EPITOPE FINAL LIST RESULT 
 
 cd-hit -i epitopes-cc-graph.fasta -o epitopes-cc-graph-cdhit-100 -c 1.00 -l 4 -n 5 -d 0 -T 10 -M 2000
+
+for e in epitopes-by-cc/*.fasta; do  cd-hit -i $e -o cdhit/$(basename ${e})-100 -c 1.00 -l 4 -n 5 -d 0 -T 10 -M 20000; done
 #### Given tha the min length of epitope predicted by epizap is 5 than is important define -l parameter as 4. 
 
 -c 1.0, means 100% identity, is the clustering threshold
@@ -98,3 +100,5 @@ cd-hit -i epitopes-cc-graph.fasta -o epitopes-cc-graph-cdhit-100 -c 1.00 -l 4 -n
 -d 0 use sequence name in fasta header till the first white space
 -M 16000, to use 16GB RAM
 -T 8, to use 8 threads
+
+# for f in cc-clustered/*.fasta; do mafft --auto $f > mafft-output/$(basename ${f}).mafft; done
