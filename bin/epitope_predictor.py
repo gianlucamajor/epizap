@@ -12,7 +12,8 @@ from Bio.SeqRecord import SeqRecord
 
 CONSENSUS_PATTERN = re.compile(r'^consensus/(\d{2,3})%')
 EPITOPE_PATTERN = re.compile(r'[A-Z]{5,}')
-IDENTITY_AND_COVERAGE_PATTERN = re.compile(r'^\d+\s+\d+\s+\d{1,3}\.\d%?\s+\d{1,3}\.\d%?')
+# IDENTITY_AND_COVERAGE_PATTERN = re.compile(r'^\d+\s+\d+\s+\d{1,3}\.\d%?\s+\d{1,3}\.\d%?') # 
+IDENTITY_AND_COVERAGE_PATTERN = re.compile(r'^\d+\s+\d+-?\d*\s+\d{1,3}\.\d%?\s+\d{1,3}\.\d%?') # with hyphen
 PERCENTAGE_OF_IDENTITY_PATTERN = re.compile(r'(\d{1,3}\.\d)(?=%$)')
 
 @click.command(help="Aim of this program is predict epitope from the multiple sequence align (MSA) core.")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from model.Segment import Segment
+from AnnotaionHandler import AnnotationHandler
 import os 
 
 import click
@@ -65,6 +66,7 @@ def get_graph(graph_file, epitopes, output_file):
     G = pickle.load(open(graph_file, 'rb'))
     # print("Graph:",G)
     # print(nx.number_connected_components(G))
+    annHandler = AnnotationHandler("/home/gianluca/workspace/epizap/results_graph_21_01_2025/segments-annotated/control_and_chagasic_patients_mapped-segment-annotated.tsv")
 
     print(F"CC idx \t Nodes \t Edges \t Epitopes \t Unique Reads")
     
@@ -79,6 +81,7 @@ def get_graph(graph_file, epitopes, output_file):
             S.append(G.subgraph(cc_s))
             
     final_ept_list = []
+    final_filtred_ept_list = []
     final_ept_set = set()
     total_of_unique_reads_on_cc = 0
     for idx, sub_graph in enumerate(S):
@@ -127,15 +130,28 @@ def get_graph(graph_file, epitopes, output_file):
         # To create a list of links to IGV  browser of segments and its insertions and MView
         igv_links = []
         mview_links = []
+        cc_feature_annotation = []
         for n in sub_graph.nodes():
             igv_links.append(_create_igv_link(n))
             mview_links.append(_create_mview_link(n))
+            cc_feature_annotation.append(get_features_annotation(n, annHandler))
         igv_links_str = ", ".join(igv_links)
         mview_links_str = ", ".join(mview_links)
-
-
-        print(F"{idx} \t {len(sub_graph.nodes())} \t {len(sub_graph.edges())} \t {len(epts_seq_set_of_graph)} \t {len(unique_reads)} \t {', '.join(epts_seq_set_of_graph)} \t {igv_links_str} \t {mview_links_str}")
         
+        print(F"{idx} \t {len(sub_graph.nodes())} \t {len(sub_graph.edges())} \t {len(epts_seq_set_of_graph)} \t {len(unique_reads)} \t {', '.join(epts_seq_set_of_graph)} \t {igv_links_str} \t {mview_links_str} \t {cc_feature_annotation}")
+        
+        # Filter the connected components that have only one epitope and more than one unique read
+        if len(epts_seq_set_of_graph) == 1 and len(unique_reads) > 1:
+            final_filtred_ept_list.append(SeqRecord(Seq(next(iter(epts_seq_set_of_graph))), id=str(idx), name=str(idx), description=""))
+            
+        elif len(epts_seq_set_of_graph) > 1 and len(unique_reads) > 1:
+            ept_by_cc_list = []
+            for ept_idx, ept in enumerate(epts_seq_set_of_graph):
+                ept_by_cc_list.append(_create_seq_record(ept, idx, ept_idx))
+            _write_output_file_(ept_by_cc_list, f"results_graph_21_01_2025/epitopes-by-msa-core-and-lonely/epitopes-by-cc/epitopes-cc-{idx}.fasta")
+
+
+            
         
         # print(f"Total unique reads in subgraph: {len(unique_reads)}")
         total_of_unique_reads_on_cc += len(unique_reads) 
@@ -151,6 +167,7 @@ def get_graph(graph_file, epitopes, output_file):
         total_of_epitopes += len(conex_component_ept_list)
     
     _write_output_file_(epitopes_sequence_final, output_file)
+    _write_output_file_(final_filtred_ept_list, "results_graph_21_01_2025/epitopes-by-msa-core-and-lonely/epitopes-cc-graph-filtred.fasta")
 
     # print(total_of_epitopes)
     print(total_of_epitopes)
@@ -176,6 +193,22 @@ def _create_mview_link(segment):
     msa_id = f"{parts[0]}-{parts[1]}-{parts[2]}-{parts[3]}-{number_of_peptides}"
     return f"{base_url}{msa_id}.html"
 
+def get_features_annotation(segment_id, annHandler):
+    
+    parts = segment_id.split('-')
+    if len(parts) < 3:
+        raise ValueError("Invalid segment ID format")
+    
+    scaffold = parts[0]
+    start = int(parts[1])
+    end = int(parts[2])
+
+    return annHandler.get_feature(scaffold, start, end, "CDS")
+    
+
+
+    annHandler.get_feature("CM026583.1", 913238, 913311, "CDS")
+
 
 def _create_igv_link(segment_id):
     """
@@ -190,13 +223,14 @@ def _create_igv_link(segment_id):
     igv_webapp = "igv-webapp/?locus="
 
     base_url = f"{local_host}/{igv_webapp}"
-    
-    
+    locus = _get_locus_from_segment(segment_id)
+    return f"{base_url}{locus}"
+
+def _get_locus_from_segment(segment_id):
     parts = segment_id.split('-')
     if len(parts) < 3:
         raise ValueError("Invalid segment ID format")
-    locus = f"{parts[0]}:{parts[1]}-{parts[2]}"
-    return f"{base_url}{locus}"
+    return f"{parts[0]}:{parts[1]}-{parts[2]}"
  
 def _get_output_file_name(input, outdir):
     outdir_path = os.path.dirname(input)
