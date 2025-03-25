@@ -35,5 +35,12 @@ class Segment():
     def get_set_of_reads(self) -> set:
         return set(self.reads)
     
+    """"
+    NOTE: The number of reads refers to the number of mappings on the segment, 
+    as the same read can map multiple times, including on the same segment. 
+    """
+    def get_mappings_number(self) -> int:
+        return len(self.reads)
+    
 
 
