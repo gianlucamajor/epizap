@@ -8,9 +8,10 @@ import pickle
 @click.command(help="Aim of this program is to load and print a graph from a file.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("connected_component", "--cc", type=int, default=None, help="The connected component to print.")
-def main(graph_file: click.Path, connected_component: int):
+@click.option('quiet', '--q', is_flag=True, help="Do not print the graph information.")
+def main(graph_file: click.Path, connected_component: int, quiet: bool):
 
-    # Load the graph from the pickle file
+        # Load the graph from the pickle file
     with open(graph_file, 'rb') as f:
         graph = pickle.load(f)
     
@@ -23,9 +24,10 @@ def main(graph_file: click.Path, connected_component: int):
     
     for idx, cc in enumerate(cc_list):
         if connected_component is not None and idx == connected_component:
-            print_cc_details(cc, idx)
+            if not quiet:
+                print_cc_details(cc, idx)
             draw_graph(cc)
-        elif connected_component is None:
+        elif connected_component is None and not quiet:
             print_cc_details(cc, idx)
     
 
