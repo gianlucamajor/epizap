@@ -10,7 +10,7 @@ process PEPTIDE_CLUSTERING_CC {
     tuple val(metaPep), path(pepFile)
 
     output:
-    path("peptides-clustering-cc/*.pickle"), emit: segmentGraph
+    path("peptides-clustering-cc/*.pickle"), emit: graph
     path("peptides-clustering-cc/connected-components/*.fasta"), emit: peptidesByCC
     path("peptides-clustering-cc/*.fasta"), emit: onlyOnePeptideList
 

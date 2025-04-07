@@ -26,6 +26,6 @@ workflow peptideClusteringByCC {
     
     emit:
     listOfPeptidesByCC = PEPTIDE_CLUSTERING_CC.out.peptidesByCC
-    graph = PEPTIDE_CLUSTERING_CC.out.segmentGraph
+    graph = PEPTIDE_CLUSTERING_CC.out.graph
 
 }

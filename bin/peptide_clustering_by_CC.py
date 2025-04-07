@@ -48,6 +48,7 @@ def main(graph_file: click.Path, peptide_file: click.Path, output_dir: click.Pat
         logger.debug(f"Connected component {idx}: {cc}")        
         for node, attributes in cc.nodes(data=True):
             nx.set_node_attributes(cc, {node: {'component_id': idx}})
+            # TODO: adding segmement (locus) info as helpful format e.g. CM026586.1:734200-734540 
 
             peptides = attributes.get('peptides', None)
             if peptides is not None:
@@ -55,7 +56,6 @@ def main(graph_file: click.Path, peptide_file: click.Path, output_dir: click.Pat
         if is_only_one(cc_peptides):
             peptide_of_cc = get_only_one_peptide(cc_peptides, idx, input_peptides)            
             cc_with_only_one_peptide_list.append(peptide_of_cc)
-            # maybe we should already store this peptide as cc's epitope in the graph
             # update the graph with the epitope list (candidates)
             add_epitopes_on_cc(cc, [peptide_of_cc])
             logger.debug(f"Peptide only one for component {idx} - {peptide_of_cc.id}: {peptide_of_cc.seq}")
@@ -63,7 +63,7 @@ def main(graph_file: click.Path, peptide_file: click.Path, output_dir: click.Pat
         else:  
             # logger.debug(f"Peptides on cc: {idx} : {cc_peptides}")
             peptides_on_cc_list = get_peptides(cc_peptides, idx, input_peptides)
-            add_epitopes_on_cc(cc, peptides_on_cc_list)
+            # add_epitopes_on_cc(cc, peptides_on_cc_list) # the epitope was not predicted yet
             logger.debug(f"Number of peptides on cc: {idx} : {len(peptides_on_cc_list)}")
             logger.debug(f"List of peptides: {idx} : {peptides_on_cc_list}")
             _write_output_file_(peptides_on_cc_list, f"{cc_out_dir}/cc-{idx}.fasta") 
@@ -72,7 +72,7 @@ def main(graph_file: click.Path, peptide_file: click.Path, output_dir: click.Pat
     
     _write_output_file_(cc_with_only_one_peptide_list, f"{output_path}/cc_with_only_one_peptide.fasta")
     output_file_name = _get_output_file_name(graph_file, output_dir)
-    
+    # The graph was updated with the component_id and epitope_candidates from the cc with peptides lonely. 
     pickle.dump(graph, open(f"{output_file_name}-graph-cc-id.pickle", 'wb'))
 
 def add_epitopes_on_cc(cc, epitope_candidates:list):
