@@ -1,6 +1,6 @@
 include { PREDICATOR } from './modules/local/predicator/main.nf'
 
-workflow predicator{
+workflow predicator{ 
     take:
     mviewCh
     
@@ -13,5 +13,6 @@ workflow predicator{
     PREDICATOR(mviewFlattedCh)
 
     emit: 
-    PREDICATOR.out
+    pepSeg = PREDICATOR.out.pepSeg
+    msaEpitopeReport = PREDICATOR.out.msaEpitopeReport
 }
