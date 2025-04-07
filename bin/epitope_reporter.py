@@ -15,7 +15,7 @@ logger = logging.getLogger("ER")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-@click.command(help="Aim of this program is ...")
+@click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 # @click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
