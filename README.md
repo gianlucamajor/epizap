@@ -84,7 +84,7 @@ bedtools intersect -a /home/gianluca/workspace/epizap/results_21_11_2024/segment
 
 ### Run
 
-nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna --outdir "results_24_08_2024"
+nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna --annotation /home/gianluca/workspace/data/epizap/ref/genomic.gff --outdir "results_07_04_2025"
 
 
 ### RUN CD-HIT VERIFY EPITOPE FINAL LIST RESULT 
