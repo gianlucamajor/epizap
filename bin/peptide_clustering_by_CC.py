@@ -64,12 +64,13 @@ def main(graph_file: click.Path, peptide_file: click.Path, output_dir: click.Pat
             # logger.debug(f"Peptides on cc: {idx} : {cc_peptides}")
             peptides_on_cc_list = get_peptides(cc_peptides, idx, input_peptides)
             # add_epitopes_on_cc(cc, peptides_on_cc_list) # the epitope was not predicted yet
+            peptides_on_cc_list.sort(key = lambda x: (len(x.seq), x.id), reverse=True)
             logger.debug(f"Number of peptides on cc: {idx} : {len(peptides_on_cc_list)}")
             logger.debug(f"List of peptides: {idx} : {peptides_on_cc_list}")
             _write_output_file_(peptides_on_cc_list, f"{cc_out_dir}/cc-{idx}.fasta") 
         
 
-    
+    cc_with_only_one_peptide_list.sort(key = lambda x: (len(x.seq), x.id), reverse=True)
     _write_output_file_(cc_with_only_one_peptide_list, f"{output_path}/cc_with_only_one_peptide.fasta")
     output_file_name = _get_output_file_name(graph_file, output_dir)
     # The graph was updated with the component_id and epitope_candidates from the cc with peptides lonely. 
