@@ -2,6 +2,7 @@
 
 import os
 import re
+import csv
 
 import click
 from Bio import SeqIO
@@ -21,7 +22,6 @@ PERCENTAGE_OF_IDENTITY_PATTERN = re.compile(r'(\d{1,3}\.\d)(?=%$)')
 @click.option("--outdir", "-o", type=click.Path(), default="")
 def main(msa_files:click.Path, outdir:click.Path):
     
-
     msa_epitopes_list = []
     for msa_file in msa_files:
         msa_epitopes = to_process_msa(msa_file)
@@ -35,8 +35,6 @@ def main(msa_files:click.Path, outdir:click.Path):
     epitope_writer(msa_epitopes_list_sorted, outdir)
 
 
-
-
 def epitope_writer(epitope_list, outdir):
     tsv_lines_report = []
     epitopes_seq_list = []
@@ -46,6 +44,7 @@ def epitope_writer(epitope_list, outdir):
         number_of_epitopes = 0
         consensus = None
         epitopes = None
+        epitopes_by_cc = []
         
         if ept['epitope_elected']:
             number_of_epitopes = len(ept['epitope_elected']['epitopes'])
@@ -54,24 +53,38 @@ def epitope_writer(epitope_list, outdir):
             
             for idx, e in enumerate(epitopes):
                 seq_rec = _create_seq_record(e, name, idx)
+                epitopes_by_cc.append(seq_rec)
                 epitopes_seq_list.append(seq_rec)
                 
                 
+        # "cc_id", "number_of_epitopes", "epitopes", "consensus_percentage", "msa_avg_identity"
+        tsv_lines_report.append(f"{_remove_cc_acronym(name)}\t{number_of_epitopes}\t{epitopes_by_cc}\t{consensus}\t{ept['msa_avg_identity']}")
 
-        tsv_lines_report.append(f" {name} \t {number_of_epitopes} \t {epitopes} \t {consensus} \t {ept['msa_avg_identity']}")
-    
-        of = f"{outdir}/epitopes.fasta"
-        _write_output_file_(epitopes_seq_list, of)
+        tsv_of = f"{outdir}/epitopes-msa-predict-report.tsv"
+        fa_of = f"{outdir}/epitopes.fasta"
+
+        _write_tsv_file(tsv_of, tsv_lines_report)
+        _write_output_fasta_file(epitopes_seq_list, fa_of)
 
         
 
 
 def _create_seq_record(sequence, name, idx):
+    name = _remove_cc_acronym(name) # to remove cc acronym
     name_with_idx = f"{name}-{idx}"
     return SeqRecord(Seq(sequence), id=name_with_idx, name=name_with_idx, description="")
 
+def _write_tsv_file(tsv_of, tsv_lines_list):
+    with open(tsv_of, "w", newline="") as tsvfile:
+        writer = csv.writer(tsvfile, delimiter="\t")
+        writer.writerow(["cc_id", "number_of_epitopes", "epitopes", "consensus_percentage", "msa_avg_identity"])
+        for line in tsv_lines_list:
+            tsv_line = line.split("\t")
+            writer.writerow(tsv_line)
+    
+    
 
-def _write_output_file_(sequences, output_file_name):
+def _write_output_fasta_file(sequences, output_file_name):
     with open(output_file_name, "w") as output_handle:
         SeqIO.write(sequences, output_handle, "fasta")
 
@@ -92,6 +105,7 @@ def to_process_msa(msa_file):
             msa_line_striped = msa_line.strip()
 
             identity_and_coverage_found = IDENTITY_AND_COVERAGE_PATTERN.search(msa_line_striped)
+
             if identity_and_coverage_found:
                 identity_and_coverage_list.append(identity_and_coverage_found.group(0))
 
@@ -121,11 +135,12 @@ def average_identity_calculator(identity_and_coverage_list):
     avg_identity = total/size
 
     return avg_identity
-    
-                
 
-                
-
+def _remove_cc_acronym(name):
+    # to remove cc acronym
+    if name.startswith("cc-"):
+        name = name.split("-")[1]
+    return name
 
 if __name__ == "__main__":
     main()

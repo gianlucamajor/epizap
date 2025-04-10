@@ -3,7 +3,7 @@ params.peptides = "${projectDir}/dataSet/peptides/kDNA-aa-in-frame.fasta"
 params.ref = "${projectDir}/dataSet/ref/y_strain_minicircles.fasta"
 params.outdir = "results"
 params.mapper = ""
-params.annotation = ""
+params.annotation = "" //.gff
 params.graph_segment_threshold = 1.00
 
 
@@ -12,9 +12,11 @@ params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
 include { mapper } from "./mapper"
 include { segmentRetriever } from "./segment_retriever"
 include { segmentGraphComputer } from './segment_graph_computer'
+include { peptideClusteringByCC } from './peptide_clustering_by_CC'
 include { msa } from "./msa"
 include { mview } from "./mview"
 include { predicator } from "./predicator"
+include { graphUpdater } from './graph_updater'
 include { lonelyPeptideRetriever } from './lonely_peptide_retriever'
 include { msaCoreAndLonelyEpitopesJoiner } from './msa_core_and_lonely_epitopes_joiner'
 
@@ -45,20 +47,27 @@ log.info """\
             }.set{mapping}
     }
 
+    //  params.annotation shoudl be a optional file
     segmentRetriever(mapping, params.peptides, params.annotation)
         .set{segmentRetriverResult}
-    msa(segmentRetriverResult.peptidesFromSegment)
     segmentGraphComputer(segmentRetriverResult.segments)
 
+    
+    // call peptide clustering graph with graph as parameter.
+    peptideClusteringByCC(segmentGraphComputer.out.segmentGraph, params.peptides)
+
+    msa(peptideClusteringByCC.out.listOfPeptidesByCC)
     mview(msa.out)
     predicator(mview.out)
+    
+    graphUpdater(peptideClusteringByCC.out.graph, predicator.out.msaEpitopeReport, segmentRetriverResult.aFeatures)
+    
+    
 
+    // lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
 
-    lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
-
-    lonelyPeptideRetriever.out.mix(predicator.out)
-        .set{epitopesByMSACoreAndLonely}
-        
-    msaCoreAndLonelyEpitopesJoiner(epitopesByMSACoreAndLonely)
+    // lonelyPeptideRetriever.out.mix(predicator.out)
+    //     .set{epitopesByMSACoreAndLonely}        
+    // msaCoreAndLonelyEpitopesJoiner(epitopesByMSACoreAndLonely)
     
 }

@@ -71,7 +71,7 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
 
     logger.info("adding nodes")
     for s in segments:
-        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads())
+        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads(), mappings_number=s.get_mappings_number(), peptides=s.get_distinct_peptide_ids())
 
     logger.info("--- %s seconds ---" % (time.time() - start_time))
     logger.info("search and adding edges")
