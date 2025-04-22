@@ -68,12 +68,18 @@ def main(graph_file:click.Path, epitopes_report_file:click.Path, features_file:c
         epitope_candidate_report = epitope_candidates_reported_dic.get(cc_id, None)
         ## The epitopes that don't require MSA, such cc where there is only one peptide, already should be in the graph.
         if epitope_candidate_report is not None:
-            add_epitopes_on_cc(cc, eval(epitope_candidate_report[EPITOPES_POS]))
+            add_epitopes_on_cc(cc, _create_record_from_simple_seq(eval(epitope_candidate_report[EPITOPES_POS])))
             # seq_record_list = eval(epitope_candidates_list)
             # print(seq_record_list)
     
     output_file_name = _get_output_file_name(graph_file, outdir)
     pickle.dump(graph, open(f"{output_file_name}-msa-epitopes.pickle", 'wb'))
+
+def _create_record_from_simple_seq(simple_seqs):
+    s_records = []
+    for s_seq in simple_seqs:
+        s_records.append(SeqRecord(Seq(s_seq['seq']), id=s_seq['id'], name=s_seq['name'], description=""))
+    return  s_records
 
 def _get_features_annotation(segment_id, annHandler):
     

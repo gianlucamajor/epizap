@@ -53,7 +53,7 @@ def epitope_writer(epitope_list, outdir):
             
             for idx, e in enumerate(epitopes):
                 seq_rec = _create_seq_record(e, name, idx)
-                epitopes_by_cc.append(seq_rec)
+                epitopes_by_cc.append(_create_simple_sequence(e, name, idx))
                 epitopes_seq_list.append(seq_rec)
                 
                 
@@ -70,9 +70,23 @@ def epitope_writer(epitope_list, outdir):
 
 
 def _create_seq_record(sequence, name, idx):
+    name_with_idx = _create_seq_name_with_idx(name, idx)
+    return SeqRecord(Seq(sequence), id=name_with_idx, name=name_with_idx, description="")
+
+def _create_seq_name_with_idx(name, idx):
     name = _remove_cc_acronym(name) # to remove cc acronym
     name_with_idx = f"{name}-{idx}"
-    return SeqRecord(Seq(sequence), id=name_with_idx, name=name_with_idx, description="")
+    return name_with_idx
+
+
+def _create_simple_sequence(sequence, name, idx):
+    name_with_idx = _create_seq_name_with_idx(name, idx)
+    return {
+    "id": name_with_idx,
+    "name": name_with_idx,
+    "seq": sequence }
+    
+
 
 def _write_tsv_file(tsv_of, tsv_lines_list):
     with open(tsv_of, "w", newline="") as tsvfile:
@@ -93,6 +107,7 @@ def epitope_voter(msa_epitopes_candidate):
         return None
     msa_epitopes_candidate_sorted = sorted(msa_epitopes_candidate, key=lambda epitope: epitope['consensus'], reverse=True)
     return msa_epitopes_candidate_sorted[0]
+
 
 
 def to_process_msa(msa_file):
