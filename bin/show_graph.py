@@ -66,11 +66,23 @@ def print_cc_details(cc, idx):
             print(f"  {attr}: {value}")    
 
 def draw_graph(graph):
-    plt.figure(figsize=(10, 10))
-    pos = nx.spring_layout(graph)
+    plt.figure(figsize=(8, 8))
+    pos = nx.spring_layout(graph, seed=42)  # Fixed seed for consistent layout
     labels = {node: f"{node}\n{attributes.get('component_id', '')}" for node, attributes in graph.nodes(data=True)}
-    nx.draw(graph, pos, labels=labels, node_size=500, font_size=10, font_weight="bold")
-    plt.title("Graph Visualization")
+    
+    # Draw nodes with color based on attributes (if available)
+    node_colors = [attributes.get('color', 'skyblue') for _, attributes in graph.nodes(data=True)]
+    nx.draw_networkx_nodes(graph, pos, node_color=node_colors, node_size=1000, alpha=0.9)
+    
+    # Draw edges with transparency
+    nx.draw_networkx_edges(graph, pos, alpha=0.5, edge_color="gray")
+    
+    # Draw labels
+    nx.draw_networkx_labels(graph, pos, labels=labels, font_size=10, font_weight="bold")
+    
+    plt.title("Graph Visualization", fontsize=16)
+    plt.axis("off")  # Turn off the axis
+    plt.tight_layout(pad=0.5)  # Adjust layout to avoid clipping and increase padding
     plt.show()
 
 

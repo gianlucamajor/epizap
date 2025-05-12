@@ -18,8 +18,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 # @click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option("--single_reads_not_allowed", "-no-single-reads", is_flag=True, help="sequence from CC composed by single reads will not be included in the fasta file reported.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
-def main(graph_file:click.Path, outdir:click.Path):
+def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool):
 
     with open(graph_file, 'rb') as f:
         graph = pickle.load(f)
@@ -28,7 +29,7 @@ def main(graph_file:click.Path, outdir:click.Path):
     logger.debug(f"Number of nodes: {graph.number_of_nodes()}")
     logger.debug(f"Number of edges: {graph.number_of_edges()}")
     
-    print(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
+    print(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
 
     cc_sorted_list = get_sorted_connected_components(graph)
     epitope_candidates_graph = []
@@ -36,6 +37,7 @@ def main(graph_file:click.Path, outdir:click.Path):
     for cc in cc_sorted_list:
         logger.debug(f"Connected component: {cc}")        
         reads_cc = set()
+        pepiteds_cc = set()
         features_cc = []
         epitope_candidates_cc = []
         igv_links = []
@@ -49,6 +51,8 @@ def main(graph_file:click.Path, outdir:click.Path):
                     cc_ids.add(value)
                 if attr == 'reads':
                     reads_cc.update(value)
+                if attr == 'peptides':
+                    pepiteds_cc.update(value)
                 if attr == 'epitope_candidates' and len(epitope_candidates_cc) == 0: # all the nodes should has the same epitope candidates
                     epitope_candidates_cc = value
                     # print(f"  {attr}: {value}")
@@ -61,19 +65,21 @@ def main(graph_file:click.Path, outdir:click.Path):
         cc_id = cc_ids.pop()
 
         msa_links_cc_= _create_mview_link(cc_id)
-        epitope_candidates_graph.extend(epitope_candidates_cc)
+        
+        if single_reads_not_allowed:
+            if len(reads_cc) >= 2: 
+                epitope_candidates_graph.extend(epitope_candidates_cc)
+        else:
+            epitope_candidates_graph.extend(epitope_candidates_cc)
         
         
         ept_candidantes_seq = []
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
-            
 
         
-
-        
-        # CC_idx	Nof_Nodes	Nof_Edges	Nof_Epitopes	Nof_Unique_Reads	Epitope_candidates     MSA_links    IGV_links   Features
-        print(f"{cc_id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(reads_cc)}\t{ept_candidantes_seq}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
+        # CC_idx	Nof_Nodes	Nof_Edges	Nof_Epitopes    Nof_Unique_peptides     Nof_Unique_Reads	Epitope_candidates     MSA_links    IGV_links   Features
+        print(f"{cc_id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{ept_candidantes_seq}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
     
     output_file_name = _get_output_file_name(graph_file, outdir)
     _write_output_fasta_file(epitope_candidates_graph, f"{output_file_name}.fasta")
