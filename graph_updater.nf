@@ -23,7 +23,6 @@ workflow graphUpdater {
 
 
     GRAPH_UPDATER(graphCh, reportCh, aFeaturesCh)
-    aFeaturesCh.view()
 
     
     emit:
