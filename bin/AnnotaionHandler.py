@@ -16,21 +16,26 @@ class AnnotationHandler:
                 segmentAnnotations.append(SegmentAnnotation(*columns))
          return segmentAnnotations
     
-    def get_feature(self, scaffold, start, end, feature): 
+    def get_feature(self, scaffold, start, end, features): 
         annotation_found = []
         for annotation in self.segmentAnnotations:
-            if (annotation.feature == feature and annotation.get_segments_in_range(scaffold, start, end)):
+            if (annotation.feature in features and annotation.get_segments_in_range(scaffold, start, end)):
                     target_segment_length = int(end - start)
                     segmentAnnotationLenth = int(annotation.end - annotation.start)
                     coverageAnnotation = float(segmentAnnotationLenth / target_segment_length)
-                    annotation_found.append(F"{annotation.locus} | {annotation.get_attribute_by_name('protein_id')} | {unquote(annotation.get_attribute_by_name('product'))} | {coverageAnnotation}")
+                    if annotation.feature == "CDS":
+                        product =  self._safe_unquote(annotation.get_attribute_by_name('product')) 
+                        annotation_found.append(F"{annotation.locus} | {annotation.get_attribute_by_name('protein_id')} | {product} | {coverageAnnotation}")
+                    if annotation.feature == "pseudogene":
+                        note = self._safe_unquote(annotation.get_attribute_by_name('Note'))
+                        annotation_found.append(F"{annotation.locus} | {annotation.get_attribute_by_name('gene_biotype')} | {note} | {coverageAnnotation}")
         return annotation_found
-
-    def print_annotations(self):
-        for annotation in self.segmentAnnotations:
-            print(annotation)
-
-# if __name__ == "__main__":
-#     annHandler = AnnotationHandler("/home/gianluca/workspace/epizap/results_graph_21_01_2025/segments-annotated/control_and_chagasic_patients_mapped-segment-annotated.tsv")
-#     # annHandler.print_annotations()
-#     annHandler.get_feature("CM026583.1", 913586, 914466, "CDS")
+    
+    def _safe_unquote(self, str_to_unquote):
+        if str_to_unquote is not None:
+            try:
+                return unquote(str_to_unquote)
+            except Exception as e:
+                print(f"Error unquoting string: {str_to_unquote}, Error: {e}")
+        else:
+            return ""

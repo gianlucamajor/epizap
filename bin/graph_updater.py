@@ -91,7 +91,7 @@ def _get_features_annotation(segment_id, annHandler):
     start = int(parts[1])
     end = int(parts[2])
 
-    return annHandler.get_feature(scaffold, start, end, "CDS")
+    return annHandler.get_feature(scaffold, start, end, ["CDS", "pseudogene"])
 
 def _get_output_path(input, outdir):
     outdir_path = os.path.dirname(input)
