@@ -13,6 +13,6 @@ process MVIEW {
     def outFileName = "${meta.id}.html"
     """
     mkdir mview
-    mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus on ${msaFile} > mview/${outFileName}
+    mview -in fasta -html head -css on -coloring consensus -threshold 100 -con_threshold 100,90,80,70,60,50 -consensus on ${msaFile} > mview/${outFileName}
     """
 }
