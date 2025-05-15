@@ -4,3 +4,10 @@ md5sum: 77984315208fd34a5da77499792b5316
 db: linear_epitope_chagas_t_cruzi_iedb_id
 Description: epitope Structure: Linear Sequence Organism: Trypanosoma cruzi (ID:5693) Include Positive  AssaysHost: Homo sapiens (human) Disease Data: Chagas disease (ID:DOID:12140)
 2343 epitopes from IEDB (https://www.iedb.org/)
+
+Date: 05/15/2025 (mm/dd/yyyy)
+file: epitope_table_export_1747317719_15052025.csv
+md5sum: 3eac16912b6bf4497975e11924ebe208
+db: linear_epitope_chagas_t_cruzi_iedb_id
+Current Filters:Epitope Structure: Linear SequenceOrganism: Trypanosoma cruzi (ID:5693)Include Positive AssaysHost: Homo sapiens (human)Disease Data: Chagas disease (ID:DOID:12140)
+2428 linear epitopes from IEDB
