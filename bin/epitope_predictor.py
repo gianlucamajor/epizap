@@ -12,7 +12,7 @@ from Bio.SeqRecord import SeqRecord
 # python3 bin/epitope_predictor.py results_05_11_2024/mview/*.html -o results_05_11_2024/
 
 CONSENSUS_PATTERN = re.compile(r'^consensus/(\d{2,3})%')
-EPITOPE_PATTERN = re.compile(r'[A-Z]{5,}')
+EPITOPE_PATTERN = re.compile(r'[A-Z]{8,}')
 # IDENTITY_AND_COVERAGE_PATTERN = re.compile(r'^\d+\s+\d+\s+\d{1,3}\.\d%?\s+\d{1,3}\.\d%?') # 
 IDENTITY_AND_COVERAGE_PATTERN = re.compile(r'^\d+\s+\d+-?\d*\s+\d{1,3}\.\d%?\s+\d{1,3}\.\d%?') # with hyphen
 PERCENTAGE_OF_IDENTITY_PATTERN = re.compile(r'(\d{1,3}\.\d)(?=%$)')
@@ -23,11 +23,16 @@ PERCENTAGE_OF_IDENTITY_PATTERN = re.compile(r'(\d{1,3}\.\d)(?=%$)')
 def main(msa_files:click.Path, outdir:click.Path):
     
     msa_epitopes_list = []
+
     for msa_file in msa_files:
         msa_epitopes = to_process_msa(msa_file)
         
         # epitope voter 
         ee =  epitope_voter(msa_epitopes['epitope_candidates'])
+        antigen_consensus = get_antigen_consensus(msa_epitopes['epitope_candidates'])
+        # verify_epitope(msa_epitopes, ee, antigen_consensus)
+
+        msa_epitopes['antigen_conseus'] = antigen_consensus
         msa_epitopes['epitope_elected'] = ee
         msa_epitopes_list.append(msa_epitopes)
 
@@ -38,6 +43,7 @@ def main(msa_files:click.Path, outdir:click.Path):
 def epitope_writer(epitope_list, outdir):
     tsv_lines_report = []
     epitopes_seq_list = []
+    antigen_consesus_list = []
  
     for ept in epitope_list:
         name = ept['file_name'].split(".html")[0] # to remove .html
@@ -50,7 +56,8 @@ def epitope_writer(epitope_list, outdir):
             number_of_epitopes = len(ept['epitope_elected']['epitopes'])
             consensus = ept['epitope_elected']['consensus']
             epitopes = ept['epitope_elected']['epitopes']
-            
+            antigen_consesus = ept['antigen_conseus']
+            antigen_consesus_list.append(_create_seq_record_with_name(antigen_consesus, name))
             for idx, e in enumerate(epitopes):
                 seq_rec = _create_seq_record(e, name, idx)
                 epitopes_by_cc.append(_create_simple_sequence(e, name, idx))
@@ -62,9 +69,11 @@ def epitope_writer(epitope_list, outdir):
 
         tsv_of = f"{outdir}/epitopes-msa-predict-report.tsv"
         fa_of = f"{outdir}/epitopes.fasta"
+        antigen_of = f"{outdir}/antigens.fasta"
 
         _write_tsv_file(tsv_of, tsv_lines_report)
         _write_output_fasta_file(epitopes_seq_list, fa_of)
+        _write_output_fasta_file(antigen_consesus_list, antigen_of)
 
         
 
@@ -72,6 +81,9 @@ def epitope_writer(epitope_list, outdir):
 def _create_seq_record(sequence, name, idx):
     name_with_idx = _create_seq_name_with_idx(name, idx)
     return SeqRecord(Seq(sequence), id=name_with_idx, name=name_with_idx, description="")
+
+def _create_seq_record_with_name(sequence, name):
+    return SeqRecord(Seq(sequence), id=name, name=name, description="")
 
 def _create_seq_name_with_idx(name, idx):
     name = _remove_cc_acronym(name) # to remove cc acronym
@@ -108,6 +120,29 @@ def epitope_voter(msa_epitopes_candidate):
     msa_epitopes_candidate_sorted = sorted(msa_epitopes_candidate, key=lambda epitope: epitope['consensus'], reverse=True)
     return msa_epitopes_candidate_sorted[0]
 
+def get_antigen_consensus(msa_epitopes_candidate):
+    if len(msa_epitopes_candidate) < 1:
+        return None
+    
+    msa_epitopes_candidate_sorted = sorted(msa_epitopes_candidate, key=lambda epitope: epitope['consensus'], reverse=True)
+    
+    antigen_consensus = None
+    for epitopes_and_consensus in msa_epitopes_candidate_sorted:
+         epitopes_and_consensus_sorted_by_longest = sorted(epitopes_and_consensus['epitopes'], key=lambda epitope: len(epitope), reverse=True)
+         longest_sequence = epitopes_and_consensus_sorted_by_longest[0]
+         if antigen_consensus is None or len(longest_sequence) > len(antigen_consensus):
+                antigen_consensus = longest_sequence
+                
+    return antigen_consensus
+def verify_epitope(msa_epitopes, ee, antigen_consensus):
+    
+
+    if ee is not None:
+        for epitope_sequence in ee['epitopes']:
+            if epitope_sequence not in antigen_consensus:
+                print(f"{msa_epitopes['file_name']} {msa_epitopes['msa_avg_identity']}")
+                print(f"{len(ee['epitopes'])} - {ee['epitopes']}")
+                print(f"WARNING: {epitope_sequence}  is not in the antigen consensus {antigen_consensus}")
 
 
 def to_process_msa(msa_file):
