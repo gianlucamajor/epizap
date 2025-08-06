@@ -70,7 +70,7 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
 
         msa_links_cc_= _create_mview_link(cc_id, pepiteds_cc)
         msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
-        
+
         if single_reads_not_allowed:
             if len(reads_cc) >= 2: 
                 epitope_candidates_graph.extend(epitope_candidates_cc)
@@ -99,7 +99,6 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
             }
             report_json_epitopes_list.append(json_data)
 
-                
     
     output_file_name = _get_output_file_name(graph_file, outdir)
     _write_output_fasta_file(epitope_candidates_graph, f"{output_file_name}.fasta")
