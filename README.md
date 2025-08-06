@@ -98,3 +98,9 @@ cd-hit -i epitopes-cc-graph.fasta -o epitopes-cc-graph-cdhit-100 -c 1.00 -l 4 -n
 -d 0 use sequence name in fasta header till the first white space
 -M 16000, to use 16GB RAM
 -T 8, to use 8 threads
+
+#### 
+Export fastq from bam
+samtools fastq control_and_chagasic_patients_msm_sorted.bam -F 256 > all-inserts-mapped-BrA4.fastq
+Keep just id on peptides sequence header
+seqkit seq -i gDNA-kDNA-aa-in-frame-60-ident.fasta > t-cruzi-all-peptides.fasta
