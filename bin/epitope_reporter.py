@@ -18,7 +18,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 
 @click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
-# @click.argument("epitopes_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--single_reads_not_allowed", "-no-single-reads", is_flag=True, help="sequence from CC composed by single reads will not be included in the fasta file reported.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool):
@@ -30,12 +29,11 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
     logger.debug(f"Number of nodes: {graph.number_of_nodes()}")
     logger.debug(f"Number of edges: {graph.number_of_edges()}")
     
-    print(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
+    logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
 
     cc_sorted_list = get_sorted_connected_components(graph)
     epitope_candidates_graph = []
     report_json_epitopes_list = []
-    report_epitopes_list = []
     for cc in cc_sorted_list:
         logger.debug(f"Connected component: {cc}")        
         reads_cc = set()
@@ -48,9 +46,7 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
             cc_ids = set()
             genomic_region_locus.append(_get_locus_from_segment(node))
             igv_links.append(_create_igv_link(node))
-            # print(f"Node: {node}")
             for attr, value in attributes.items():
-                # print(f"  {attr}: {value}")
                 if attr == 'component_id':
                     cc_ids.add(value)
                 if attr == 'reads':
@@ -59,7 +55,6 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
                     pepiteds_cc.update(value)
                 if attr == 'epitope_candidates' and len(epitope_candidates_cc) == 0: # all the nodes should has the same epitope candidates
                     epitope_candidates_cc = value
-                    # print(f"  {attr}: {value}")
                 if attr == 'feature':
                     features_cc.extend(parse_feature_string(value))
 
@@ -81,10 +76,7 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
         ept_candidantes_seq = []
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
-            # CC_idx	Nof_Nodes	Nof_Edges	Nof_Epitopes    Nof_Unique_peptides     Nof_Unique_Reads	Epitope_candidates     MSA_links    IGV_links   Features
-            # print(f"{cc_id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{ept_candidantes_seq}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
-            # Print the information in tabular format
-            print(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
+            logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
 
             # Create a JSON object with the same information
             json_data = {
@@ -142,6 +134,31 @@ def _create_mview_name(cc_id, number_of_peptides):
     
     return mview_name
 
+
+def _get_locus_from_segment(segment_id):
+    parts = segment_id.split('-')
+    if len(parts) < 3:
+        raise ValueError("Invalid segment ID format")
+    return f"{parts[0]}:{parts[1]}-{parts[2]}"
+
+def _write_output_fasta_file(sequences, output_file_name):
+    with open(output_file_name, "w") as output_handle:
+        SeqIO.write(sequences, output_handle, "fasta")
+
+def _get_output_path(input, outdir):
+    outdir_path = os.path.dirname(input)
+    if outdir:
+        outdir_path = outdir
+    return outdir_path
+
+def _get_output_file_name(input, outdir):
+    outdir_path = _get_output_path(input, outdir)
+
+    input_file_name =  os.path.basename(input)
+    input_file_name_splited =  os.path.splitext(input_file_name)
+    output_file_base_name = input_file_name_splited[0]
+    return os.path.join(outdir_path, output_file_base_name)
+
 def _create_mview_link(cc_id, number_of_peptides):
     # Lonely peptides does have a MSA link
     mview_name = ""
@@ -170,30 +187,6 @@ def _create_igv_link(node_name):
     base_url = f"{local_host}/{igv_webapp}"
     locus = _get_locus_from_segment(node_name)
     return f"{base_url}{locus}"
-
-def _get_locus_from_segment(segment_id):
-    parts = segment_id.split('-')
-    if len(parts) < 3:
-        raise ValueError("Invalid segment ID format")
-    return f"{parts[0]}:{parts[1]}-{parts[2]}"
-
-def _write_output_fasta_file(sequences, output_file_name):
-    with open(output_file_name, "w") as output_handle:
-        SeqIO.write(sequences, output_handle, "fasta")
-
-def _get_output_path(input, outdir):
-    outdir_path = os.path.dirname(input)
-    if outdir:
-        outdir_path = outdir
-    return outdir_path
-
-def _get_output_file_name(input, outdir):
-    outdir_path = _get_output_path(input, outdir)
-
-    input_file_name =  os.path.basename(input)
-    input_file_name_splited =  os.path.splitext(input_file_name)
-    output_file_base_name = input_file_name_splited[0]
-    return os.path.join(outdir_path, output_file_base_name)
 
 if __name__ == "__main__":
     main()
