@@ -18,16 +18,24 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 
 @click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
-@click.option("--single_reads_not_allowed", "-no-single-reads", is_flag=True, help="sequence from CC composed by single reads will not be included in the fasta file reported.")
+@click.option("--single-reads/--no-single-reads", "single_reads", default=False, help="sequence from CC composed by single reads will not be included in the fasta file reported by default.")
+@click.option("--iedb", is_flag=True, help="Include IEDB information in the report.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
-def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool):
+@click.option('-v', '--verbose', is_flag=True)
+def main(graph_file:click.Path, outdir:click.Path, single_reads:bool, iedb:bool, verbose:bool):
+
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Verbose mode is on.")
 
     with open(graph_file, 'rb') as f:
         graph = pickle.load(f)
 
     # Print basic information about the graph
-    logger.debug(f"Number of nodes: {graph.number_of_nodes()}")
-    logger.debug(f"Number of edges: {graph.number_of_edges()}")
+    logger.info(f"Number of nodes: {graph.number_of_nodes()}")
+    logger.info(f"Number of edges: {graph.number_of_edges()}")
+    logger.info(f"IEDB Info: {iedb}")
+    logger.info(f"Single Reads Allowed: {single_reads}")
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
 
@@ -66,11 +74,12 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads_not_allowed:bool
         msa_links_cc_= _create_mview_link(cc_id, pepiteds_cc)
         msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
 
-        if single_reads_not_allowed:
+        if single_reads:
+            epitope_candidates_graph.extend(epitope_candidates_cc)
+        else:
             if len(reads_cc) >= 2: 
                 epitope_candidates_graph.extend(epitope_candidates_cc)
-        else:
-            epitope_candidates_graph.extend(epitope_candidates_cc)
+            
         
         
         ept_candidantes_seq = []
