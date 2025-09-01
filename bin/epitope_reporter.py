@@ -19,10 +19,18 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--single-reads/--no-single-reads", "single_reads", default=False, help="sequence from CC composed by single reads will not be included in the fasta file reported by default.")
-@click.option("--iedb", is_flag=True, help="Include IEDB information in the report.")
+@click.option("--iedb", "-iedb", is_flag=True, help="Include IEDB information in the report.")
+@click.option("--iedb-epitopes", "-epitopes", "ept_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB epitope table CSV file. Required if --iedb is set.")
+@click.option("--iedb-blast-hits", "-epitopes-hits", "iedb_blast_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option('-v', '--verbose', is_flag=True)
-def main(graph_file:click.Path, outdir:click.Path, single_reads:bool, iedb:bool, verbose:bool):
+def main(graph_file:click.Path, 
+         outdir:click.Path, 
+         single_reads:bool, 
+         iedb:bool, 
+         ept_file_path:click.Path, 
+         iedb_blast_file_path:click.Path, 
+         verbose:bool):
 
     if verbose:
         logger.setLevel(logging.DEBUG)
@@ -36,6 +44,9 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads:bool, iedb:bool,
     logger.info(f"Number of edges: {graph.number_of_edges()}")
     logger.info(f"IEDB Info: {iedb}")
     logger.info(f"Single Reads Allowed: {single_reads}")
+    logger.info(f"IEDB Epitopes reported: {iedb}")
+    
+    validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path)
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
 
@@ -91,12 +102,14 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads:bool, iedb:bool,
             json_data = {
                 "ID": e.id,
                 "Number of Genomic Regions": cc.number_of_nodes(),
-                "Number of Peptides": len(pepiteds_cc), # unique peptides
-                "Number of Inserts": len(reads_cc), #unique reads
+                "Number of Peptides": len(pepiteds_cc),  # unique peptides
+                "Number of Inserts": len(reads_cc),  # unique reads
                 "Epitope": str(e.seq),
                 "MSA": msa_page_name,
                 "Genomic Region Locus": genomic_region_locus,
-                "Features": features_cc
+                "Features": {
+                    "Annotation": features_cc
+                }
             }
             report_json_epitopes_list.append(json_data)
 
@@ -108,7 +121,16 @@ def main(graph_file:click.Path, outdir:click.Path, single_reads:bool, iedb:bool,
     with open(f"{output_file_name}.json", "w") as json_file:
         json.dump(report_json_epitopes_list, json_file, indent=4)
         
-
+def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path):
+    if iedb:
+        if not ept_file_path or not iedb_blast_file_path:
+            logger.error(
+                "When --iedb is set, you must also provide both --iedb-epitopes/-epitopes and --iedb-blast-hits/-epitopes-hits options."
+            )
+            raise click.UsageError(
+                "Missing required options: --iedb-epitopes/-epitopes and/or --iedb-blast-hits/-epitopes-hits when --iedb is used."
+            )
+    
 def parse_feature_string(features_str):
     # Example input: ["WNWZ01000121.1-8261-8334 | KAF8303398.1 | tryptophanyl-tRNA synthetase, putative | 1.0", "WNWZ01000189.1-16368-16457 | pseudogene | tryptophanyl-tRNA synthetase, pseudonote | 0.8640776699029126"]
     features = []
