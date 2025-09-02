@@ -11,6 +11,8 @@ import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from BlastResults import BlastResults
+from IEDBEpitopeTableHandler import IEDBEpitopeTableHandler
 
 logger = logging.getLogger("ER")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -20,8 +22,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--single-reads/--no-single-reads", "single_reads", default=False, help="sequence from CC composed by single reads will not be included in the fasta file reported by default.")
 @click.option("--iedb", "-iedb", is_flag=True, help="Include IEDB information in the report.")
-@click.option("--iedb-epitopes", "-epitopes", "ept_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB epitope table CSV file. Required if --iedb is set.")
-@click.option("--iedb-blast-hits", "-epitopes-hits", "iedb_blast_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
+@click.option("--iedb-epitopes", "-iedb-path", "ept_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB epitope table CSV file. Required if --iedb is set.")
+@click.option("--iedb-blast-hits", "-iedb-hits-path", "iedb_blast_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option('-v', '--verbose', is_flag=True)
 def main(graph_file:click.Path, 
@@ -47,6 +49,16 @@ def main(graph_file:click.Path,
     logger.info(f"IEDB Epitopes reported: {iedb}")
     
     validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path)
+    if iedb:
+         blastIEDBHandler = BlastResults(iedb_blast_file_path)
+         min_length = 8
+         min_identity = 100
+         no_gaps = True
+         qseqid = None
+         logger.info(f"IEDB Parameters: min_length: {min_length}, min_identity: {min_identity}, no_gaps: {no_gaps}, qseqid: {qseqid}")
+         iedbEpitopesBestHits = blastIEDBHandler.best_hits_by_sseqid(min_length, min_identity, no_gaps, qseqid)
+         IEDBTableHandler = IEDBEpitopeTableHandler(ept_file_path)
+
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
 
@@ -97,6 +109,30 @@ def main(graph_file:click.Path,
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
             logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
+            
+            iedbEpitopesInfo = []
+            if iedb:
+               for iedbHits in iedbEpitopesBestHits:
+                    epitope_pos = 0
+                    iedbEpitope_pos = 1
+                    qstart_pos = 6
+                    qend_pos = 7 
+                    sstart_pos = 8 
+                    send_pos = 9
+                
+
+                    if(iedbHits[epitope_pos] == e.id):
+                        iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedbEpitope_pos])
+                        logger.info(f"IEDB Best hit for epitope {iedbHits}")
+                        logger.info(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
+                        iedbEpitopesInfo.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
+                                               "sequence": iedbEpitopeInfo['epitope_sequence'],
+                                               "qstart": iedbHits[qstart_pos],
+                                               "qend": iedbHits[qend_pos],
+                                               "sstart": iedbHits[sstart_pos],
+                                               "send": iedbHits[send_pos],
+                                               "source_molecule": iedbEpitopeInfo['Epitope - Source Molecule'],
+                                               "source_molecule_IRI": iedbEpitopeInfo['Epitope - Source Molecule IRI']})
 
             # Create a JSON object with the same information
             json_data = {
@@ -108,7 +144,8 @@ def main(graph_file:click.Path,
                 "MSA": msa_page_name,
                 "Genomic Region Locus": genomic_region_locus,
                 "Features": {
-                    "Annotation": features_cc
+                    "Annotation": features_cc,
+                    "IEDB": iedbEpitopesInfo,
                 }
             }
             report_json_epitopes_list.append(json_data)
