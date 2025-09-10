@@ -144,8 +144,8 @@ def main(graph_file:click.Path,
                 "MSA": msa_page_name,
                 "Genomic Region Locus": genomic_region_locus,
                 "Features": {
-                    "Annotation": features_cc,
-                    "IEDB": iedbEpitopesInfo,
+                    "GenomicRegionsAnnotation": features_cc,
+                    "TCruziIEDB": iedbEpitopesInfo,
                 }
             }
             report_json_epitopes_list.append(json_data)
