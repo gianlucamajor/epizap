@@ -60,7 +60,7 @@ def main(graph_file:click.Path,
          IEDBTableHandler = IEDBEpitopeTableHandler(ept_file_path)
 
     
-    logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tMSA_links\tIGV_links\tFeatures")
+    logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tFeatures")
 
     cc_sorted_list = get_sorted_connected_components(graph)
     epitope_candidates_graph = []
@@ -71,12 +71,10 @@ def main(graph_file:click.Path,
         pepiteds_cc = set()
         features_cc = []
         epitope_candidates_cc = []
-        igv_links = []
         genomic_region_locus = []
         for node, attributes in cc.nodes(data=True):
             cc_ids = set()
             genomic_region_locus.append(_get_locus_from_segment(node))
-            igv_links.append(_create_igv_link(node))
             for attr, value in attributes.items():
                 if attr == 'component_id':
                     cc_ids.add(value)
@@ -94,7 +92,6 @@ def main(graph_file:click.Path,
             
         cc_id = cc_ids.pop()
 
-        msa_links_cc_= _create_mview_link(cc_id, pepiteds_cc)
         msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
 
         if single_reads:
@@ -108,34 +105,33 @@ def main(graph_file:click.Path,
         ept_candidantes_seq = []
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
-            logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{msa_links_cc_}\t{igv_links}\t{features_cc}")
+            logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{features_cc}")
             
-            iedbEpitopesInfo = []
-            if iedb:
-               for iedbHits in iedbEpitopesBestHits:
-                    epitope_pos = 0
-                    iedbEpitope_pos = 1
-                    qstart_pos = 6
-                    qend_pos = 7 
-                    sstart_pos = 8 
-                    send_pos = 9
-                
+            
+            if single_reads:
+                create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e)
+            else:
+                if len(reads_cc) >= 2: 
+                    create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e)
 
-                    if(iedbHits[epitope_pos] == e.id):
-                        iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedbEpitope_pos])
-                        logger.info(f"IEDB Best hit for epitope {iedbHits}")
-                        logger.info(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
-                        iedbEpitopesInfo.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
-                                               "sequence": iedbEpitopeInfo['epitope_sequence'],
-                                               "qstart": iedbHits[qstart_pos],
-                                               "qend": iedbHits[qend_pos],
-                                               "sstart": iedbHits[sstart_pos],
-                                               "send": iedbHits[send_pos],
-                                               "source_molecule": iedbEpitopeInfo['Epitope - Source Molecule'],
-                                               "source_molecule_IRI": iedbEpitopeInfo['Epitope - Source Molecule IRI']})
+    
+    output_file_name = _get_output_file_name(graph_file, outdir)
+    _write_output_fasta_file(epitope_candidates_graph, f"{output_file_name}.fasta")
+    
+    # Write the JSON object to a file
+    with open(f"{output_file_name}.json", "w") as json_file:
+        json.dump(report_json_epitopes_list, json_file, indent=4)
 
-            # Create a JSON object with the same information
-            json_data = {
+def create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
+    if iedb:
+        tcruziEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e)
+
+                # Create a JSON object with the same information
+    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits)
+    report_json_epitopes_list.append(json_data)
+
+def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits):
+    json_data = {
                 "ID": e.id,
                 "Number of Genomic Regions": cc.number_of_nodes(),
                 "Number of Peptides": len(pepiteds_cc),  # unique peptides
@@ -145,18 +141,36 @@ def main(graph_file:click.Path,
                 "Genomic Region Locus": genomic_region_locus,
                 "Features": {
                     "GenomicRegionsAnnotation": features_cc,
-                    "TCruziIEDB": iedbEpitopesInfo,
+                    "TCruziIEDB": tcruziEpitopeIEDBHits,
                 }
             }
-            report_json_epitopes_list.append(json_data)
+    
+    return json_data
 
-    
-    output_file_name = _get_output_file_name(graph_file, outdir)
-    _write_output_fasta_file(epitope_candidates_graph, f"{output_file_name}.fasta")
-    
-    # Write the JSON object to a file
-    with open(f"{output_file_name}.json", "w") as json_file:
-        json.dump(report_json_epitopes_list, json_file, indent=4)
+def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
+    tcruzi_iedb_epitopes_info = []
+    epitope_pos = 0
+    iedb_epitope_pos = 1
+    qstart_pos = 6
+    qend_pos = 7 
+    sstart_pos = 8 
+    send_pos = 9
+
+    for iedbHits in iedbEpitopesBestHits:
+        if(iedbHits[epitope_pos] == e.id):
+            iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedb_epitope_pos])
+            logger.info(f"IEDB Best hit for epitope {iedbHits}")
+            logger.info(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
+            tcruzi_iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
+                                              "sequence": iedbEpitopeInfo['epitope_sequence'],
+                                              "qstart": iedbHits[qstart_pos],
+                                              "qend": iedbHits[qend_pos],
+                                              "sstart": iedbHits[sstart_pos],
+                                              "send": iedbHits[send_pos],
+                                              "source_molecule": iedbEpitopeInfo['Epitope - Source Molecule'],
+                                              "source_molecule_IRI": iedbEpitopeInfo['Epitope - Source Molecule IRI']})
+    return tcruzi_iedb_epitopes_info
+             
         
 def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path):
     if iedb:
@@ -227,34 +241,6 @@ def _get_output_file_name(input, outdir):
     output_file_base_name = input_file_name_splited[0]
     return os.path.join(outdir_path, output_file_base_name)
 
-def _create_mview_link(cc_id, number_of_peptides):
-    # Lonely peptides does have a MSA link
-    mview_name = ""
-    if len(number_of_peptides) > 1:
-        local_host = "http://localhost:8080"
-        lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
-        mview_url = "mview/"
-    
-        base_url = f"{local_host}/{mview_url}"
-        msa_id = f"cc-{cc_id}"
-        mview_name = f"{base_url}{msa_id}.html"
-    return mview_name
-
-def _create_igv_link(node_name):
-    """
-        Expected is received something like this:
-        CM026586.1-1665418-1665512-182-22
-        And return a link like this:
-        http://localhost:8080/igv-webapp/?locus=CM026586.1:1665418-1665512
-    """
-
-    local_host = "http://localhost:8080"
-    lbi_host = "http://projetos.lbi.iq.usp.br/trypanosoma/epizap"
-    igv_webapp = "igv-webapp/?locus="
-
-    base_url = f"{local_host}/{igv_webapp}"
-    locus = _get_locus_from_segment(node_name)
-    return f"{base_url}{locus}"
 
 if __name__ == "__main__":
     main()
