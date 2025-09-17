@@ -56,11 +56,11 @@ def main(graph_file:click.Path,
          no_gaps = True
          qseqid = None
          logger.info(f"IEDB Parameters: min_length: {min_length}, min_identity: {min_identity}, no_gaps: {no_gaps}, qseqid: {qseqid}")
-         iedbEpitopesBestHits = blastIEDBHandler.best_hits_by_sseqid(min_length, min_identity, no_gaps, qseqid)
+         iedbEpitopesBestHits = blastIEDBHandler.filter_hits(min_length, min_identity, no_gaps, qseqid)
          IEDBTableHandler = IEDBEpitopeTableHandler(ept_file_path)
 
     
-    logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tFeatures")
+    logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tGenomic_Region_Annotation")
 
     cc_sorted_list = get_sorted_connected_components(graph)
     epitope_candidates_graph = []
@@ -69,7 +69,7 @@ def main(graph_file:click.Path,
         logger.debug(f"Connected component: {cc}")        
         reads_cc = set()
         pepiteds_cc = set()
-        features_cc = []
+        genomic_region_annotation_cc = []
         epitope_candidates_cc = []
         genomic_region_locus = []
         for node, attributes in cc.nodes(data=True):
@@ -85,7 +85,7 @@ def main(graph_file:click.Path,
                 if attr == 'epitope_candidates' and len(epitope_candidates_cc) == 0: # all the nodes should has the same epitope candidates
                     epitope_candidates_cc = value
                 if attr == 'feature':
-                    features_cc.extend(parse_feature_string(value))
+                    genomic_region_annotation_cc.extend(parse_genomic_region_annotation(value))
 
             if len(cc_ids) > 1:
                 raise Exception(f"CC {cc} has multiple component_ids: {cc_ids}")
@@ -105,14 +105,14 @@ def main(graph_file:click.Path,
         ept_candidantes_seq = []
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
-            logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{features_cc}")
+            logger.debug(f"{e.id}\t{cc.number_of_nodes()}\t{cc.number_of_edges()}\t{len(epitope_candidates_cc)}\t{len(pepiteds_cc)}\t{len(reads_cc)}\t{str(e.seq)}\t{genomic_region_annotation_cc}")
             
             
             if single_reads:
-                create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e)
+                create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
             else:
                 if len(reads_cc) >= 2: 
-                    create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e)
+                    create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
 
     
     output_file_name = _get_output_file_name(graph_file, outdir)
@@ -121,6 +121,8 @@ def main(graph_file:click.Path,
     # Write the JSON object to a file
     with open(f"{output_file_name}.json", "w") as json_file:
         json.dump(report_json_epitopes_list, json_file, indent=4)
+
+        
 
 def create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
     if iedb:
@@ -159,8 +161,8 @@ def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
     for iedbHits in iedbEpitopesBestHits:
         if(iedbHits[epitope_pos] == e.id):
             iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedb_epitope_pos])
-            logger.info(f"IEDB Best hit for epitope {iedbHits}")
-            logger.info(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
+            logger.debug(f"IEDB Best hit for epitope {iedbHits}")
+            logger.debug(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
             tcruzi_iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
                                               "sequence": iedbEpitopeInfo['epitope_sequence'],
                                               "qstart": iedbHits[qstart_pos],
@@ -182,22 +184,22 @@ def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path):
                 "Missing required options: --iedb-epitopes/-epitopes and/or --iedb-blast-hits/-epitopes-hits when --iedb is used."
             )
     
-def parse_feature_string(features_str):
+def parse_genomic_region_annotation(genomic_region_annotation_str):
     # Example input: ["WNWZ01000121.1-8261-8334 | KAF8303398.1 | tryptophanyl-tRNA synthetase, putative | 1.0", "WNWZ01000189.1-16368-16457 | pseudogene | tryptophanyl-tRNA synthetase, pseudonote | 0.8640776699029126"]
-    features = []
-    for feat in features_str: 
-        if feat:
-            parts = [p.strip() for p in feat.split('|')]
+    genomic_region_annotation = []
+    for gra in genomic_region_annotation_str: 
+        if gra:
+            parts = [p.strip() for p in gra.split('|')]
             if len(parts) != 4:
-                raise ValueError(f"Invalid feature string format: {feat}")
-            features.append({
+                raise ValueError(f"Invalid genomic region annotation string format: {gra}")
+            genomic_region_annotation.append({
         "genomic_region": parts[0],
         "type": parts[1],
         "description": parts[2],
         "coverage": float(parts[3])
             })
     
-    return features
+    return genomic_region_annotation
 
 def get_sorted_connected_components(graph):
     connected_component_list_result = []
