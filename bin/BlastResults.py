@@ -34,6 +34,7 @@ class BlastResults:
             filtered.append(fields)
         return filtered
 
+    #WARNING: this function returns a best hit per sseqid, not per qseqid!
     def best_hits_by_sseqid(self, min_length=0, min_identity=0.0, no_gaps=False, qseqid=None):
         best_hits = {}
         for fields in self.filter_hits(min_length, min_identity, no_gaps, qseqid):
