@@ -27,6 +27,6 @@ workflow segmentRetriever{
     emit:
     segments = SEGMENT_EXTRACTOR.out
     peptidesFromSegment = SEQUENCE_EXTRACTOR.out
-    aFeatures = SEGMENT_NOTE_TAKER.out.segAnnotated
+    aFeatures = annotated ? SEGMENT_NOTE_TAKER.out.segAnnotated: null
     
 }
