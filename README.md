@@ -27,7 +27,7 @@ docker pull gianlucamajor/epizap:v0.2.0-alpha
 
 
 ```
-nextflow epizap.nf --reads dataSet/k-dna-insert-reads/CCC_severe_a.fastqnextflow epizap.nf
+nextflow epizap.nf --reads dataSet/k-dna-insert-reads/CCC_severe_a.fastq
 ```
 
 #### Expected result
@@ -84,7 +84,13 @@ bedtools intersect -a /home/gianluca/workspace/epizap/results_21_11_2024/segment
 
 ### Run
 
-nextflow epizap.nf --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna --annotation /home/gianluca/workspace/data/epizap/ref/genomic.gff --outdir "results_07_04_2025"
+
+nextflow epizap.nf \
+    --reads /home/gianluca/workspace/data/epizap/gDNA-kDNA-insert-reads/control_and_chagasic_patients.fastq \
+    --peptides /home/gianluca/workspace/data/epizap/peptides/gDNA-kDNA-aa-in-frame-60-ident.fasta \
+    --ref /home/gianluca/workspace/data/epizap/ref/t_cruzi_br_a4.fna \
+    --annotation /home/gianluca/workspace/data/epizap/ref/genomic.gff \
+    --outdir "results_18_09_2025"
 
 
 ### RUN CD-HIT VERIFY EPITOPE FINAL LIST RESULT 
@@ -104,3 +110,10 @@ Export fastq from bam
 samtools fastq control_and_chagasic_patients_msm_sorted.bam -F 256 > all-inserts-mapped-BrA4.fastq
 Keep just id on peptides sequence header
 seqkit seq -i gDNA-kDNA-aa-in-frame-60-ident.fasta > t-cruzi-all-peptides.fasta
+
+### Epitope reporter 
+python3 bin/epitope_reporter.py results_19_09_2025/graph-updated/control_and_chagasic_patients_mapped-segment-graph-graph-cc-id-msa-epitopes.pickle \
+    -o results_19_09_2025/ept-reported-19-09-25/ \
+    --iedb \
+    --iedb-epitopes dataSet/iedb/epitope_table_export_1747317719_15052025.csv \
+    --iedb-blast-hits results_06_08_2025/iedb-blast/EPZ-IEDB.tsv
