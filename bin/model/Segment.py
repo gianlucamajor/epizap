@@ -2,12 +2,13 @@
 
 class Segment():
     
-    def __init__(self, scaffod:str, start:int, end:int, count:int, min_mapq:float, max_mapq:float, avg_mapq:float, median_mapq:float, reads:[]) -> None:
+    def __init__(self, scaffod:str, start:int, end:int, count:int, min_mapq:float, reads_map_strand:str, max_mapq:float, avg_mapq:float, median_mapq:float, reads:[]) -> None:
         self.scaffod = scaffod
         self.start = start
         self.end = end
         self.reads_count = count
         self.min_mapq = min_mapq
+        self.reads_map_strand = reads_map_strand
         self.max_mapq = max_mapq
         self.avg_mapq = avg_mapq
         self.median_mapq = median_mapq
@@ -41,6 +42,10 @@ class Segment():
     """
     def get_mappings_number(self) -> int:
         return len(self.reads)
+    
+    def get_reads_map_strand(self) -> str:
+        return self.reads_map_strand
+    
     
 
 

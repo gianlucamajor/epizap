@@ -16,7 +16,7 @@ process SEGMENT_EXTRACTOR {
 
     """
     mkdir segments
-    bedtools merge -i ${mappedFile} -s -c 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > segments/${outFileName}
+    bedtools bamtobed -i ${mappedFile} | bedtools merge -i - -s -c 4,5,6,5,5,5,4 -delim ";" -o count,min,distinct,max,mean,median,collapse > segments/${outFileName}                                                                   
     """
 }
 
@@ -27,6 +27,7 @@ process SEGMENT_EXTRACTOR {
 * The intersected output is then piped to the `cut` command to select specific columns.
 *       Especially, to avoid to duplicate columns with reads info. 
 * The selected columns are saved to a file in the `segments-annotated` directory with the name format `${meta.id}-annotated.tsv`.
+* The -s option is used to force strandedness.
 *
 * Parameters:
 * - segmentFile: The file containing the segments with peptides (epitopes) mapped.
@@ -52,7 +53,7 @@ process SEGMENT_NOTE_TAKER {
     script:
     """
     mkdir segments-annotated
-    bedtools intersect -a ${segmentFile}  -b ${annotationFile} -wb | cut -f1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19 > segments-annotated/${meta.id}-annotated.tsv
+    bedtools intersect -a ${segmentFile}  -b ${annotationFile} -wb -s | cut -f1,2,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18,19 > segments-annotated/${meta.id}-annotated.tsv
     """
  
     stub:

@@ -52,20 +52,21 @@ def _read_mapped_segment_tsv(map_seg_file):
     END_POS=2
     TOTAL_READS_MAPPED_POS=3
     MIN_MAPQ=4
-    MAX_MAPQ=5
-    AVG_MAPQ=6
-    MEDIAN_MAPQ=7
-    LIST_OF_READS=8
+    READS_MAP_STRAND=5
+    MAX_MAPQ=6
+    AVG_MAPQ=7
+    MEDIAN_MAPQ=8
+    LIST_OF_READS=9
+    
     
     segments = []
 
     with open(map_seg_file) as file:
         file_reader = csv.reader(file, delimiter=DELIM)
         for line in file_reader:
-            s = Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";") )
+            s = Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ],line[READS_MAP_STRAND], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";"))
             segments.append(s)
-            # print(line[SCF_POS],line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[MIN_MAPQ], line[MAX_MAPQ], line[LIST_OF_READS])
-            # bedtools merge  -c (columns) 1,5,5,5,5,1 -delim ";" -o count,min,max,mean,median,collapse > ${outFileName}
+            #bedtools merge -i - -s -c 4,5,6,5,5,5,4 -delim ";" -o count,min,distinct,max,mean,median,collapse > segments/${outFileName}                                                                    
     return segments
     
 

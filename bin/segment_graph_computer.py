@@ -22,10 +22,12 @@ START_POS=1
 END_POS=2
 TOTAL_READS_MAPPED_POS=3
 MIN_MAPQ=4
-MAX_MAPQ=5
-AVG_MAPQ=6
-MEDIAN_MAPQ=7
-LIST_OF_READS=8
+READS_MAP_STRAND=5
+MAX_MAPQ=6
+AVG_MAPQ=7
+MEDIAN_MAPQ=8
+LIST_OF_READS=9
+
 
 logger = logging.getLogger("SGC")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -71,7 +73,7 @@ def main(segment_file:click.Path, outdir:click.Path, threshold:float, processors
 
     logger.info("adding nodes")
     for s in segments:
-        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads(), mappings_number=s.get_mappings_number(), peptides=s.get_distinct_peptide_ids())
+        s_graph.add_node(s.get_complete_name(), reads=s.get_set_of_reads(), reads_map_strand=s.get_reads_map_strand(), mappings_number=s.get_mappings_number(), peptides=s.get_distinct_peptide_ids())
 
     logger.info("--- %s seconds ---" % (time.time() - start_time))
     logger.info("search and adding edges")
@@ -107,7 +109,7 @@ def get_next_line(segment_file):
             yield line
 
 def process_line(line):
-    return Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";") )
+    return Segment(line[SCF_POS], line[START_POS], line[END_POS], line[TOTAL_READS_MAPPED_POS] ,line[MIN_MAPQ], line[READS_MAP_STRAND], line[MAX_MAPQ], line[AVG_MAPQ], line[MEDIAN_MAPQ], line[LIST_OF_READS].split(";"))
 
 def _setup_csv_field_size_limit():
     # increasing csv file size limit
