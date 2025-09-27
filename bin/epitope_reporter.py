@@ -24,6 +24,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.option("--iedb", "-iedb", is_flag=True, help="Include IEDB information in the report.")
 @click.option("--iedb-epitopes", "-iedb-path", "ept_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB epitope table CSV file. Required if --iedb is set.")
 @click.option("--iedb-blast-hits", "-iedb-hits-path", "iedb_blast_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
+@click.option("--iedb-human-epitope-hits", "-human-epitope-hits", "human_epitope_hits_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the human IEDB epitope database. Optional.")
+@click.option("--iedb-human-epitopes", "-human-epitope", "human_epitope_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB human epitope table CSV file.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option('-v', '--verbose', is_flag=True)
 def main(graph_file:click.Path, 
@@ -31,7 +33,9 @@ def main(graph_file:click.Path,
          single_reads:bool, 
          iedb:bool, 
          ept_file_path:click.Path, 
-         iedb_blast_file_path:click.Path, 
+         iedb_blast_file_path:click.Path,
+         human_epitope_hits_path:click.Path,
+         human_epitope_path:click.Path,
          verbose:bool):
 
     if verbose:
@@ -48,7 +52,7 @@ def main(graph_file:click.Path,
     logger.info(f"Single Reads Allowed: {single_reads}")
     logger.info(f"IEDB Epitopes reported: {iedb}")
     
-    validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path)
+    validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path, human_epitope_hits_path, human_epitope_path)
     if iedb:
          blastIEDBHandler = BlastResults(iedb_blast_file_path)
          min_length = 8
@@ -161,6 +165,9 @@ def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
     for iedbHits in iedbEpitopesBestHits:
         if(iedbHits[epitope_pos] == e.id):
             iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedb_epitope_pos])
+            if iedbEpitopeInfo is None:
+                logger.warning(f"No IEDB information found for epitope ID: {iedbHits[iedb_epitope_pos]}")
+                continue
             logger.debug(f"IEDB Best hit for epitope {iedbHits}")
             logger.debug(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
             tcruzi_iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
@@ -174,7 +181,7 @@ def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
     return tcruzi_iedb_epitopes_info
              
         
-def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path):
+def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path, human_epitope_hits_path, human_epitope_path):
     if iedb:
         if not ept_file_path or not iedb_blast_file_path:
             logger.error(
@@ -183,6 +190,14 @@ def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path):
             raise click.UsageError(
                 "Missing required options: --iedb-epitopes/-epitopes and/or --iedb-blast-hits/-epitopes-hits when --iedb is used."
             )
+  
+    if human_epitope_hits_path and not human_epitope_path:
+        logger.error(
+            "When --iedb-human-epitope-hits/-human-epitope-hits-path is set, you must also provide --iedb-human-epitopes/-human-epitope-path option."
+        )
+        raise click.UsageError(
+            "Missing required option: --iedb-human-epitopes/-human-epitope-path when --iedb-human-epitope-hits/-human-epitope-hits-path is used."
+        )
     
 def parse_genomic_region_annotation(genomic_region_annotation_str):
     # Example input: ["WNWZ01000121.1-8261-8334 | KAF8303398.1 | tryptophanyl-tRNA synthetase, putative | 1.0", "WNWZ01000189.1-16368-16457 | pseudogene | tryptophanyl-tRNA synthetase, pseudonote | 0.8640776699029126"]
