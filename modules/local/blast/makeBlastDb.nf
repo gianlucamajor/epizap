@@ -1,4 +1,4 @@
-params.sequences = "${projectDir}/dataSet/iedb/epitope_table_04_08_22_T_Cruzi_1659634014.fasta"
+params.sequences = "${projectDir}/dataSet/iedb/tcruzi/epitope_table_04_08_22_T_Cruzi_1659634014.fasta"
 params.dbType = 'prot'
 params.outDir = 'blast/db'
 

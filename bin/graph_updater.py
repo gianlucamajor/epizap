@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 CC_ID_POS = 0
 EPITOPES_POS = 2
 
-@click.command(help="Aim of this program is ...")
+@click.command(help="Aim of this program is to load a graph from a file, add epitopes from a report file and features from an annotation file, and save the updated graph to a new file.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.argument("epitopes_report_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--features_file", "-f", type=click.Path(exists=True, file_okay=True, dir_okay=False), default=None,  help="The file with features annotated on the segment.")
