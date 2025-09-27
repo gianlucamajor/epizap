@@ -13,6 +13,7 @@ GAPS = 5
 QUERY_SEQ = 13
 SUBJECT_SEQ = 14
 
+# THIS IS MOKEY CODE TO TEST IEDB TABLE HANDLER
 
 @click.command(help="Filter BLAST tabular results by hit length, identity, gap presence, and optionally by qseqid. Returns only the best hit per sseqid.")
 @click.argument("blast_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
