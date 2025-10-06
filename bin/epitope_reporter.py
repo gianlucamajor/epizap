@@ -13,7 +13,14 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from BlastResults import BlastResults
 from IEDBEpitopeTableHandler import IEDBEpitopeTableHandler
+from enum import Enum
 
+class DefaultHistsParams(Enum):
+    MIN_LENGTH = 8
+    MIN_IDENTITY = 100
+    NO_GAPS = True
+    QSEQID = None
+    
 logger = logging.getLogger("ER")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -54,14 +61,10 @@ def main(graph_file:click.Path,
     
     validate_iedb_options(iedb, iedb_tcruzi_epitopes_fp, iedb_tcruzi_epitopes_hits_fp, iedb_human_epitopes_hits_fp, iedb_human_epitopes_fp)
     if iedb:
-         iedbTcruziBlastHandler = BlastResults(iedb_tcruzi_epitopes_hits_fp)
-         min_length = 8
-         min_identity = 100
-         no_gaps = True
-         qseqid = None
-         logger.info(f"IEDB Parameters: min_length: {min_length}, min_identity: {min_identity}, no_gaps: {no_gaps}, qseqid: {qseqid}")
-         iedbTcruziEpitopesHits = iedbTcruziBlastHandler.filter_hits(min_length, min_identity, no_gaps, qseqid)
-         iedbTcruziTableHandler = IEDBEpitopeTableHandler(iedb_tcruzi_epitopes_fp)
+        iedbTcruziBlastHandler = BlastResults(iedb_tcruzi_epitopes_hits_fp)
+        logger.info(f"IEDB Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
+        iedbTcruziEpitopesHits = iedbTcruziBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
+        iedbTcruziTableHandler = IEDBEpitopeTableHandler(iedb_tcruzi_epitopes_fp)
 
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tGenomic_Region_Annotation")
