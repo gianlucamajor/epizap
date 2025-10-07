@@ -12,6 +12,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from BlastResults import BlastResults
+from BlastResults import BlastColumns
 from IEDBEpitopeTableHandler import IEDBEpitopeTableHandler
 from enum import Enum
 
@@ -57,14 +58,21 @@ def main(graph_file:click.Path,
     logger.info(f"Number of edges: {graph.number_of_edges()}")
     logger.info(f"IEDB Info: {iedb}")
     logger.info(f"Single Reads Allowed: {single_reads}")
-    logger.info(f"IEDB T. cruzi Epitopes report: {iedb}")
+    logger.info(f"IEDB  Epitopes report: {iedb}")
     
     validate_iedb_options(iedb, iedb_tcruzi_epitopes_fp, iedb_tcruzi_epitopes_hits_fp, iedb_human_epitopes_hits_fp, iedb_human_epitopes_fp)
     if iedb:
         iedbTcruziBlastHandler = BlastResults(iedb_tcruzi_epitopes_hits_fp)
-        logger.info(f"IEDB Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
+        logger.info(f"IEDB T. cruzi Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
         iedbTcruziEpitopesHits = iedbTcruziBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
         iedbTcruziTableHandler = IEDBEpitopeTableHandler(iedb_tcruzi_epitopes_fp)
+
+        ## Human IEDB Epitopes
+        if iedb_human_epitopes_hits_fp:
+            iedbHumanBlastHandler = BlastResults(iedb_human_epitopes_hits_fp)
+            logger.info(f"IEDB Human Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
+            iedbHumanEpitopesHits = iedbHumanBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
+            iedbHumanTableHandler = IEDBEpitopeTableHandler(iedb_human_epitopes_fp)
 
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tGenomic_Region_Annotation")
@@ -116,10 +124,10 @@ def main(graph_file:click.Path,
             
             
             if single_reads:
-                create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
             else:
                 if len(reads_cc) >= 2: 
-                    create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                    create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
 
     
     output_file_name = _get_output_file_name(graph_file, outdir)
@@ -131,15 +139,18 @@ def main(graph_file:click.Path,
 
         
 
-def create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
+def create_cc_json_entity(iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
     if iedb:
         tcruziEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbTcruziEpitopesHits, iedbTcruziTableHandler, e)
 
+        if iedbHumanEpitopesHits:
+            humanEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbHumanEpitopesHits, iedbHumanBlastHandler, e)    
+
                 # Create a JSON object with the same information
-    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits)
+    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits)
     report_json_epitopes_list.append(json_data)
 
-def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits):
+def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits):
     json_data = {
                 "ID": e.id,
                 "Number of Genomic Regions": cc.number_of_nodes(),
@@ -151,19 +162,16 @@ def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_reg
                 "Features": {
                     "GenomicRegionsAnnotation": features_cc,
                     "TCruziIEDB": tcruziEpitopeIEDBHits,
+                    "HumanIEDB": humanEpitopeIEDBHits,
                 }
             }
     
     return json_data
 
 def retrieve_iedb_epitope_details(iedbEpitopesHits, IEDBTableHandler, e):
-    tcruzi_iedb_epitopes_info = []
-    epitope_pos = 0
-    iedb_epitope_pos = 1
-    qstart_pos = 6
-    qend_pos = 7 
-    sstart_pos = 8 
-    send_pos = 9
+    iedb_epitopes_info = []
+    epitope_pos = BlastColumns.QSEQID.value
+    iedb_epitope_pos = BlastColumns.SSEQID.value
 
     for iedbHits in iedbEpitopesHits:
         if(iedbHits[epitope_pos] == e.id):
@@ -173,15 +181,15 @@ def retrieve_iedb_epitope_details(iedbEpitopesHits, IEDBTableHandler, e):
                 continue
             logger.debug(f"IEDB Best hit for epitope {iedbHits}")
             logger.debug(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
-            tcruzi_iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
+            iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
                                               "sequence": iedbEpitopeInfo['epitope_sequence'],
-                                              "qstart": iedbHits[qstart_pos],
-                                              "qend": iedbHits[qend_pos],
-                                              "sstart": iedbHits[sstart_pos],
-                                              "send": iedbHits[send_pos],
+                                              "qstart": iedbHits[BlastColumns.QSTART.value],
+                                              "qend": iedbHits[BlastColumns.QEND.value],
+                                              "sstart": iedbHits[BlastColumns.SSTART.value],
+                                              "send": iedbHits[BlastColumns.SEND.value],
                                               "source_molecule": iedbEpitopeInfo['Epitope - Source Molecule'],
                                               "source_molecule_IRI": iedbEpitopeInfo['Epitope - Source Molecule IRI']})
-    return tcruzi_iedb_epitopes_info
+    return iedb_epitopes_info
              
         
 def validate_iedb_options(iedb, iedb_tcruzi_epitopes_fp, iedb_tcruzi_epitopes_hits_fp, iedb_human_epitopes_hits_fp, iedb_human_epitopes_fp):

@@ -112,8 +112,11 @@ Keep just id on peptides sequence header
 seqkit seq -i gDNA-kDNA-aa-in-frame-60-ident.fasta > t-cruzi-all-peptides.fasta
 
 ### Epitope reporter 
-python3 bin/epitope_reporter.py results_19_09_2025/graph-updated/control_and_chagasic_patients_mapped-segment-graph-graph-cc-id-msa-epitopes.pickle \
-    -o results_19_09_2025/ept-reported-19-09-25/ \
+python3 bin/epitope_reporter.py results_25_09_2025/graph-updated/control_and_chagasic_patients_mapped-segment-graph-graph-cc-id-msa-epitopes.pickle \
+    -o results_25_09_2025/ept-reported/ \
     --iedb \
-    --iedb-epitopes dataSet/iedb/epitope_table_export_1747317719_15052025.csv \
-    --iedb-blast-hits results_06_08_2025/iedb-blast/EPZ-IEDB.tsv
+    --iedb-tcruzi-epitopes-hits results_25_09_2025/blastp-tcruzi-iedb-epitopes/EPZ-IEDB.tsv \
+    --iedb-tcruzi-epitopes dataSet/iedb/tcruzi/epitope_table_export_1747317719_15052025.csv \
+    --iedb-human-epitopes-hits results_25_09_2025/blastp-human-iedb-epitopes/EPZ-HUMAN-IEDB-25-09-25.tsv \
+    --iedb-human-epitopes dataSet/iedb/human/human_epitope_table_export_1757095864.csv
+    
