@@ -114,6 +114,7 @@ seqkit seq -i gDNA-kDNA-aa-in-frame-60-ident.fasta > t-cruzi-all-peptides.fasta
 ### Epitope reporter 
 python3 bin/epitope_reporter.py results_25_09_2025/graph-updated/control_and_chagasic_patients_mapped-segment-graph-graph-cc-id-msa-epitopes.pickle \
     -o results_25_09_2025/ept-reported/ \
+    --proteome-hits results_25_09_2025/blastp-proteome/EPZ-on-proteome-w2-e200000-be-tc-dm-cl-sy-yc6-bra4.tsv \
     --iedb \
     --iedb-tcruzi-epitopes-hits results_25_09_2025/blastp-tcruzi-iedb-epitopes/EPZ-IEDB.tsv \
     --iedb-tcruzi-epitopes dataSet/iedb/tcruzi/epitope_table_export_1747317719_15052025.csv \
