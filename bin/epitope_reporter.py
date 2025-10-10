@@ -12,8 +12,22 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from BlastResults import BlastResults
+from BlastResults import BlastColumns
 from IEDBEpitopeTableHandler import IEDBEpitopeTableHandler
+from enum import Enum
 
+class DefaultHistsParams(Enum):
+    MIN_LENGTH = 8
+    MIN_IDENTITY = 100
+    NO_GAPS = True
+    QSEQID = None
+
+class ProteomeHistsParams(Enum):
+    MIN_LENGTH = 8
+    MIN_IDENTITY = 60
+    NO_GAPS = False
+    QSEQID = None
+    
 logger = logging.getLogger("ER")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -21,21 +35,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.command(help="Aim of this program is to generate a report of the epitopes from the graph.")
 @click.argument("graph_file", type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @click.option("--single-reads/--no-single-reads", "single_reads", default=False, help="sequence from CC composed by single reads will not be included in the fasta file reported by default.")
+@click.option("--proteome-hits", "-proteome-hits", "proteome_hits_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the T. cruzi proteome.")
 @click.option("--iedb", "-iedb", is_flag=True, help="Include IEDB information in the report.")
-@click.option("--iedb-epitopes", "-iedb-path", "ept_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB epitope table CSV file. Required if --iedb is set.")
-@click.option("--iedb-blast-hits", "-iedb-hits-path", "iedb_blast_file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
-@click.option("--iedb-human-epitope-hits", "-human-epitope-hits", "human_epitope_hits_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the human IEDB epitope database. Optional.")
-@click.option("--iedb-human-epitopes", "-human-epitope", "human_epitope_path", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB human epitope table CSV file.")
+@click.option("--iedb-tcruzi-epitopes-hits", "-tcruzi-epitopes-hits", "iedb_tcruzi_epitopes_hits_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the IEDB epitope database. Required if --iedb is set.")
+@click.option("--iedb-tcruzi-epitopes", "-tcruzi-epitopes", "iedb_tcruzi_epitopes_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB T. cruzi epitope table CSV file. Required if --iedb is set.")
+@click.option("--iedb-human-epitopes-hits", "-human-epitopes-hits", "iedb_human_epitopes_hits_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the human IEDB epitope database. Optional.")
+@click.option("--iedb-human-epitopes", "-human-epitopes", "iedb_human_epitopes_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB human epitope table CSV file.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option('-v', '--verbose', is_flag=True)
 def main(graph_file:click.Path, 
          outdir:click.Path, 
          single_reads:bool, 
+         proteome_hits_fp:click.Path,
          iedb:bool, 
-         ept_file_path:click.Path, 
-         iedb_blast_file_path:click.Path,
-         human_epitope_hits_path:click.Path,
-         human_epitope_path:click.Path,
+         iedb_tcruzi_epitopes_hits_fp:click.Path,
+         iedb_tcruzi_epitopes_fp:click.Path, 
+         iedb_human_epitopes_hits_fp:click.Path,
+         iedb_human_epitopes_fp:click.Path,
          verbose:bool):
 
     if verbose:
@@ -50,18 +66,29 @@ def main(graph_file:click.Path,
     logger.info(f"Number of edges: {graph.number_of_edges()}")
     logger.info(f"IEDB Info: {iedb}")
     logger.info(f"Single Reads Allowed: {single_reads}")
-    logger.info(f"IEDB Epitopes reported: {iedb}")
+    logger.info(f"IEDB  Epitopes report: {iedb}")
     
-    validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path, human_epitope_hits_path, human_epitope_path)
+    #Proteome hits
+    if proteome_hits_fp:
+        proteomeBlastHandler = BlastResults(proteome_hits_fp)
+        logger.info(f"Proteome Parameters: min_length: {ProteomeHistsParams.MIN_LENGTH.value}, min_identity: {ProteomeHistsParams.MIN_IDENTITY.value}, no_gaps: {ProteomeHistsParams.NO_GAPS.value}, qseqid: {ProteomeHistsParams.QSEQID.value}")
+        proteomeEpitopesBestHits = proteomeBlastHandler.best_hits_by_qseqid_and_bitscore(ProteomeHistsParams.MIN_LENGTH.value, ProteomeHistsParams.MIN_IDENTITY.value, ProteomeHistsParams.NO_GAPS.value, ProteomeHistsParams.QSEQID.value)
+        
+
+    #IEDB options
+    validate_iedb_options(iedb, iedb_tcruzi_epitopes_fp, iedb_tcruzi_epitopes_hits_fp, iedb_human_epitopes_hits_fp, iedb_human_epitopes_fp)
     if iedb:
-         blastIEDBHandler = BlastResults(iedb_blast_file_path)
-         min_length = 8
-         min_identity = 100
-         no_gaps = True
-         qseqid = None
-         logger.info(f"IEDB Parameters: min_length: {min_length}, min_identity: {min_identity}, no_gaps: {no_gaps}, qseqid: {qseqid}")
-         iedbEpitopesBestHits = blastIEDBHandler.filter_hits(min_length, min_identity, no_gaps, qseqid)
-         IEDBTableHandler = IEDBEpitopeTableHandler(ept_file_path)
+        iedbTcruziBlastHandler = BlastResults(iedb_tcruzi_epitopes_hits_fp)
+        logger.info(f"IEDB T. cruzi Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
+        iedbTcruziEpitopesHits = iedbTcruziBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
+        iedbTcruziTableHandler = IEDBEpitopeTableHandler(iedb_tcruzi_epitopes_fp)
+
+        ## Human IEDB Epitopes
+        if iedb_human_epitopes_hits_fp:
+            iedbHumanBlastHandler = BlastResults(iedb_human_epitopes_hits_fp)
+            logger.info(f"IEDB Human Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
+            iedbHumanEpitopesHits = iedbHumanBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
+            iedbHumanTableHandler = IEDBEpitopeTableHandler(iedb_human_epitopes_fp)
 
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tGenomic_Region_Annotation")
@@ -113,10 +140,10 @@ def main(graph_file:click.Path,
             
             
             if single_reads:
-                create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
             else:
                 if len(reads_cc) >= 2: 
-                    create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                    create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
 
     
     output_file_name = _get_output_file_name(graph_file, outdir)
@@ -128,15 +155,22 @@ def main(graph_file:click.Path,
 
         
 
-def create_cc_json_entity(iedb, iedbEpitopesBestHits, IEDBTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
+def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
+    if proteomeEpitopesBestHits:
+        epitope_proteome_best_hit = retrive_epitope_proteome_best_hit(proteomeEpitopesBestHits, e)
+        
+    
     if iedb:
-        tcruziEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e)
+        tcruziEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbTcruziEpitopesHits, iedbTcruziTableHandler, e)
+
+        if iedbHumanEpitopesHits:
+            humanEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbHumanEpitopesHits, iedbHumanBlastHandler, e)    
 
                 # Create a JSON object with the same information
-    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits)
+    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits)
     report_json_epitopes_list.append(json_data)
 
-def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, tcruziEpitopeIEDBHits):
+def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits):
     json_data = {
                 "ID": e.id,
                 "Number of Genomic Regions": cc.number_of_nodes(),
@@ -146,23 +180,21 @@ def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_reg
                 "MSA": msa_page_name,
                 "Genomic Region Locus": genomic_region_locus,
                 "Features": {
+                    "ProteinBestHit": epitope_proteome_best_hit,
                     "GenomicRegionsAnnotation": features_cc,
                     "TCruziIEDB": tcruziEpitopeIEDBHits,
+                    "HumanIEDB": humanEpitopeIEDBHits,
                 }
             }
     
     return json_data
 
-def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
-    tcruzi_iedb_epitopes_info = []
-    epitope_pos = 0
-    iedb_epitope_pos = 1
-    qstart_pos = 6
-    qend_pos = 7 
-    sstart_pos = 8 
-    send_pos = 9
+def retrieve_iedb_epitope_details(iedbEpitopesHits, IEDBTableHandler, e):
+    iedb_epitopes_info = []
+    epitope_pos = BlastColumns.QSEQID.value
+    iedb_epitope_pos = BlastColumns.SSEQID.value
 
-    for iedbHits in iedbEpitopesBestHits:
+    for iedbHits in iedbEpitopesHits:
         if(iedbHits[epitope_pos] == e.id):
             iedbEpitopeInfo = IEDBTableHandler.get_by_epitope_id(iedbHits[iedb_epitope_pos])
             if iedbEpitopeInfo is None:
@@ -170,33 +202,57 @@ def retrieve_iedb_epitope_details(iedbEpitopesBestHits, IEDBTableHandler, e):
                 continue
             logger.debug(f"IEDB Best hit for epitope {iedbHits}")
             logger.debug(f"{iedbEpitopeInfo['Epitope_id']}\t{iedbEpitopeInfo['epitope_sequence']}\t{iedbEpitopeInfo['Epitope - Source Molecule']}\t{iedbEpitopeInfo['Epitope - Source Molecule IRI']}")
-            tcruzi_iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
+            iedb_epitopes_info.append({"IEDB_id": iedbEpitopeInfo['Epitope_id'],
                                               "sequence": iedbEpitopeInfo['epitope_sequence'],
-                                              "qstart": iedbHits[qstart_pos],
-                                              "qend": iedbHits[qend_pos],
-                                              "sstart": iedbHits[sstart_pos],
-                                              "send": iedbHits[send_pos],
+                                              "qstart": iedbHits[BlastColumns.QSTART.value],
+                                              "qend": iedbHits[BlastColumns.QEND.value],
+                                              "sstart": iedbHits[BlastColumns.SSTART.value],
+                                              "send": iedbHits[BlastColumns.SEND.value],
                                               "source_molecule": iedbEpitopeInfo['Epitope - Source Molecule'],
                                               "source_molecule_IRI": iedbEpitopeInfo['Epitope - Source Molecule IRI']})
-    return tcruzi_iedb_epitopes_info
-             
+    return iedb_epitopes_info
+
+def retrive_epitope_proteome_best_hit(proteomeEpitopesBestHits, e):
+    epitope_proteome_best_hit_info = {}
+    epitope_pos = BlastColumns.QSEQID.value
+    protein_pos = BlastColumns.SSEQID.value
+    epbh = proteomeEpitopesBestHits.get(e.id)
+    if epbh:
+        epitope_proteome_best_hit_info = {"epitope_id": epbh[epitope_pos],
+                                          "protein_id": epbh[protein_pos],
+                                          "protein_description": remove_protein_id_and_taxa_info(epbh[BlastColumns.STITLE.value], epbh[protein_pos]),
+                                          "pident": epbh[BlastColumns.PIDENT.value],
+                                          "length": epbh[BlastColumns.LENGTH.value],
+                                          "mismatches": epbh[BlastColumns.MISMATCH.value],
+                                          "gap_opens": epbh[BlastColumns.GAPOPEN.value],
+                                          "qstart": epbh[BlastColumns.QSTART.value],
+                                          "qend": epbh[BlastColumns.QEND.value],
+                                          "sstart": epbh[BlastColumns.SSTART.value],
+                                          "send": epbh[BlastColumns.SEND.value],
+                                          "evalue": epbh[BlastColumns.EVALUE.value],
+                                          "bitscore": epbh[BlastColumns.BITSCORE.value]}
+    return epitope_proteome_best_hit_info 
+
+def remove_protein_id_and_taxa_info(originalDescription: str, protein_id: str):
+    return originalDescription.replace(protein_id, "").replace("[Trypanosoma cruzi]", "").strip()
+    
         
-def validate_iedb_options(iedb, ept_file_path, iedb_blast_file_path, human_epitope_hits_path, human_epitope_path):
+def validate_iedb_options(iedb, iedb_tcruzi_epitopes_fp, iedb_tcruzi_epitopes_hits_fp, iedb_human_epitopes_hits_fp, iedb_human_epitopes_fp):
     if iedb:
-        if not ept_file_path or not iedb_blast_file_path:
+        if not iedb_tcruzi_epitopes_fp or not iedb_tcruzi_epitopes_hits_fp:
             logger.error(
-                "When --iedb is set, you must also provide both --iedb-epitopes/-epitopes and --iedb-blast-hits/-epitopes-hits options."
+                "When --iedb is set, you must also provide both  --iedb-tcruzi-epitopes-hits/-tcruzi-epitopes-hits and --iedb-tcruzi-epitopes/-tcruzi-epitopes  options."                
             )
             raise click.UsageError(
-                "Missing required options: --iedb-epitopes/-epitopes and/or --iedb-blast-hits/-epitopes-hits when --iedb is used."
+                "Missing required options: --iedb-tcruzi-epitopes/-tcruzi-epitopes and/or --iedb-tcruzi-epitopes-hits/-tcruzi-epitopes-hits when --iedb is used."
             )
   
-    if human_epitope_hits_path and not human_epitope_path:
+    if iedb_human_epitopes_hits_fp and not iedb_human_epitopes_fp:
         logger.error(
-            "When --iedb-human-epitope-hits/-human-epitope-hits-path is set, you must also provide --iedb-human-epitopes/-human-epitope-path option."
+            "When --iedb-human-epitopes-hits/-human-epitopes-hits is set, you must also provide --iedb-human-epitopes/-human-epitopes option."
         )
         raise click.UsageError(
-            "Missing required option: --iedb-human-epitopes/-human-epitope-path when --iedb-human-epitope-hits/-human-epitope-hits-path is used."
+            "Missing required option: --iedb-human-epitopes/-human-epitopes when --iedb-human-epitopes-hits/-human-epitopes-hits is used."
         )
     
 def parse_genomic_region_annotation(genomic_region_annotation_str):
