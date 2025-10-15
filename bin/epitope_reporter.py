@@ -41,6 +41,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @click.option("--iedb-tcruzi-epitopes", "-tcruzi-epitopes", "iedb_tcruzi_epitopes_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB T. cruzi epitope table CSV file. Required if --iedb is set.")
 @click.option("--iedb-human-epitopes-hits", "-human-epitopes-hits", "iedb_human_epitopes_hits_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the BLAST results file of the epitopes against the human IEDB epitope database. Optional.")
 @click.option("--iedb-human-epitopes", "-human-epitopes", "iedb_human_epitopes_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the IEDB human epitope table CSV file.")
+@click.option("--inserts-group", "-inserts_group", "inserts_group_fp", type=click.Path(exists=True, file_okay=True, dir_okay=False),  help="The path to the inserts group file.")
 @click.option("--outdir", "-o", type=click.Path(exists=True, file_okay=False, dir_okay=True),  help="The dir path where the output file will be created.")
 @click.option('-v', '--verbose', is_flag=True)
 def main(graph_file:click.Path, 
@@ -52,6 +53,7 @@ def main(graph_file:click.Path,
          iedb_tcruzi_epitopes_fp:click.Path, 
          iedb_human_epitopes_hits_fp:click.Path,
          iedb_human_epitopes_fp:click.Path,
+         inserts_group_fp:click.Path,
          verbose:bool):
 
     if verbose:
@@ -67,6 +69,7 @@ def main(graph_file:click.Path,
     logger.info(f"IEDB Info: {iedb}")
     logger.info(f"Single Reads Allowed: {single_reads}")
     logger.info(f"IEDB  Epitopes report: {iedb}")
+    logger.info(f"Inserts Group: {inserts_group_fp}")
     
     #Proteome hits
     if proteome_hits_fp:
@@ -89,7 +92,10 @@ def main(graph_file:click.Path,
             logger.info(f"IEDB Human Parameters: min_length: {DefaultHistsParams.MIN_LENGTH.value}, min_identity: {DefaultHistsParams.MIN_IDENTITY.value}, no_gaps: {DefaultHistsParams.NO_GAPS.value}, qseqid: {DefaultHistsParams.QSEQID.value}")
             iedbHumanEpitopesHits = iedbHumanBlastHandler.filter_hits(DefaultHistsParams.MIN_LENGTH.value, DefaultHistsParams.MIN_IDENTITY.value, DefaultHistsParams.NO_GAPS.value, DefaultHistsParams.QSEQID.value)
             iedbHumanTableHandler = IEDBEpitopeTableHandler(iedb_human_epitopes_fp)
-
+ 
+    inserts_group_set = load_inserts_group(inserts_group_fp)
+    
+    
     
     logger.debug(f"CC_idx\tNof_Nodes\tNof_Edges\tNof_Epitopes\tNof_Unique_peptides\tNof_Unique_Reads\tEpitope_candidates\tGenomic_Region_Annotation")
 
@@ -140,10 +146,10 @@ def main(graph_file:click.Path,
             
             
             if single_reads:
-                create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e, inserts_group_set)
             else:
                 if len(reads_cc) >= 2: 
-                    create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e)
+                    create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanTableHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, genomic_region_annotation_cc, genomic_region_locus, msa_page_name, e, inserts_group_set)
 
     
     output_file_name = _get_output_file_name(graph_file, outdir)
@@ -153,9 +159,22 @@ def main(graph_file:click.Path,
     with open(f"{output_file_name}.json", "w") as json_file:
         json.dump(report_json_epitopes_list, json_file, indent=4)
 
+def load_inserts_group(inserts_group_fp):
+    inserts_group = {}
+    if inserts_group_fp:
+        with open(inserts_group_fp, 'r') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) != 2:
+                    logger.warning(f"Invalid line in inserts group file: {line.strip()}")
+                    continue
+                read_id, group_id = parts
+                inserts_group[read_id] = group_id
+    return inserts_group
+
         
 
-def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e):
+def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, inserts_group_set):
     if proteomeEpitopesBestHits:
         epitope_proteome_best_hit = retrive_epitope_proteome_best_hit(proteomeEpitopesBestHits, e)
         
@@ -165,17 +184,35 @@ def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits
 
         if iedbHumanEpitopesHits:
             humanEpitopeIEDBHits = retrieve_iedb_epitope_details(iedbHumanEpitopesHits, iedbHumanBlastHandler, e)    
+    
+    number_of_inserts_by_group = create_insert_by_group(reads_cc, inserts_group_set)
+
+                
+                
+
 
                 # Create a JSON object with the same information
-    json_data = create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits)
+    json_data = create_json_epitope_data(cc, reads_cc, number_of_inserts_by_group, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits)
     report_json_epitopes_list.append(json_data)
 
-def create_json_epitope_data(cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits):
+def create_insert_by_group(reads_cc, inserts_group_set):
+    group_counts = {}
+    if inserts_group_set:
+        # Count number of insert_ids by group
+        for r in reads_cc:
+            insert_id = r.split('_', 1)[0]
+            group = inserts_group_set.get(f"@{insert_id}", "NoGroup")
+            group_counts[group] = group_counts.get(group, 0) + 1
+
+    return group_counts
+
+def create_json_epitope_data(cc, reads_cc, number_of_inserts_by_group, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits):
     json_data = {
                 "ID": e.id,
                 "Number of Genomic Regions": cc.number_of_nodes(),
                 "Number of Peptides": len(pepiteds_cc),  # unique peptides
                 "Number of Inserts": len(reads_cc),  # unique reads
+                "Number of Inserts by Group": number_of_inserts_by_group,
                 "Epitope": str(e.seq),
                 "MSA": msa_page_name,
                 "Genomic Region Locus": genomic_region_locus,
