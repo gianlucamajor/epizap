@@ -70,8 +70,8 @@ https://desmid.github.io/mview/index.html
 mview -in fasta -html head -css on -coloring consensus -threshold 100 -consensus on -con_threshold 100 ../msa/control_and_chagasic_patients_WNWZ01000122.1-6914-7101-40_26-msa.msc > WNWZ01000122.1-6914-7101-40_26-msa.html
 
 ### IGV-webapp
-
-npx http-server -a localhost /home/gianluca/workspace/igv-webapp/
+npx http-server -a localhost /home/gianluca/www/epizap
+http://localhost:8080/igv-webapp/
 http://localhost:8080/igv-webapp/?locus=CM026600.1:31354-31391
 
 ### Extract features from GFF
@@ -119,5 +119,6 @@ python3 bin/epitope_reporter.py results_25_09_2025/graph-updated/control_and_cha
     --iedb-tcruzi-epitopes-hits results_25_09_2025/blastp-tcruzi-iedb-epitopes/EPZ-IEDB.tsv \
     --iedb-tcruzi-epitopes dataSet/iedb/tcruzi/epitope_table_export_1747317719_15052025.csv \
     --iedb-human-epitopes-hits results_25_09_2025/blastp-human-iedb-epitopes/EPZ-HUMAN-IEDB-25-09-25.tsv \
-    --iedb-human-epitopes dataSet/iedb/human/human_epitope_table_export_1757095864.csv
+    --iedb-human-epitopes dataSet/iedb/human/human_epitope_table_export_1757095864.csv \
+    --inserts-group /home/gianluca/workspace/data/epizap/ids/all_inserts_ids_con_asym_mild_severe_a_and_b.txt
     
