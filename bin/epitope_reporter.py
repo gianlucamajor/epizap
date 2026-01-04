@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 import json
@@ -71,6 +70,13 @@ def main(graph_file:click.Path,
     logger.info(f"IEDB  Epitopes report: {iedb}")
     logger.info(f"Inserts Group: {inserts_group_fp}")
     
+    # Initialize optional handlers/hit containers to avoid UnboundLocalError when flags not provided
+    proteomeEpitopesBestHits = None
+    iedbTcruziEpitopesHits = None
+    iedbTcruziTableHandler = None
+    iedbHumanEpitopesHits = None
+    iedbHumanTableHandler = None
+    
     #Proteome hits
     if proteome_hits_fp:
         proteomeBlastHandler = BlastResults(proteome_hits_fp)
@@ -110,8 +116,13 @@ def main(graph_file:click.Path,
         epitope_candidates_cc = []
         genomic_region_locus = []
         for node, attributes in cc.nodes(data=True):
+            if not single_reads and len(attributes.get('reads')) < 2:
+                logger.info(f"Skipping because not allowed single read on report: Node {node} - component id: {attributes.get('component_id')}")
+                continue
+
             cc_ids = set()
             genomic_region_locus.append(_get_locus_from_segment(node))
+        
             for attr, value in attributes.items():
                 if attr == 'component_id':
                     cc_ids.add(value)
@@ -127,9 +138,9 @@ def main(graph_file:click.Path,
             if len(cc_ids) > 1:
                 raise Exception(f"CC {cc} has multiple component_ids: {cc_ids}")
             
-        cc_id = cc_ids.pop()
+            cc_id = cc_ids.pop()
 
-        msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
+            msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
 
         if single_reads:
             epitope_candidates_graph.extend(epitope_candidates_cc)
@@ -175,6 +186,11 @@ def load_inserts_group(inserts_group_fp):
         
 
 def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, inserts_group_set):
+    # Default values so JSON fields are always present even when optional inputs are missing
+    epitope_proteome_best_hit = None
+    tcruziEpitopeIEDBHits = []
+    humanEpitopeIEDBHits = []
+
     if proteomeEpitopesBestHits:
         epitope_proteome_best_hit = retrive_epitope_proteome_best_hit(proteomeEpitopesBestHits, e)
         
@@ -209,7 +225,7 @@ def create_insert_by_group(reads_cc, inserts_group_set):
 def create_json_epitope_data(cc, reads_cc, number_of_inserts_by_group, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, epitope_proteome_best_hit, tcruziEpitopeIEDBHits, humanEpitopeIEDBHits):
     json_data = {
                 "ID": e.id,
-                "Number of Genomic Regions": cc.number_of_nodes(),
+                "Number of Genomic Regions": len(genomic_region_locus),
                 "Number of Peptides": len(pepiteds_cc),  # unique peptides
                 "Number of Inserts": len(reads_cc),  # unique reads
                 "Number of Inserts by Group": number_of_inserts_by_group,
