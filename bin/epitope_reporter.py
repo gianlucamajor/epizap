@@ -70,7 +70,7 @@ def main(graph_file:click.Path,
     logger.info(f"IEDB  Epitopes report: {iedb}")
     logger.info(f"Inserts Group: {inserts_group_fp}")
     
-    # Initialize optional handlers/hit containers to avoid UnboundLocalError when flags not provided
+    ## Initialize optional handlers/hit containers to avoid UnboundLocalError when flags not provided
     proteomeEpitopesBestHits = None
     iedbTcruziEpitopesHits = None
     iedbTcruziTableHandler = None
@@ -117,6 +117,7 @@ def main(graph_file:click.Path,
         genomic_region_locus = []
         for node, attributes in cc.nodes(data=True):
             if not single_reads and len(attributes.get('reads')) < 2:
+                # Skipping because not allowed single read on report
                 logger.info(f"Skipping because not allowed single read on report: Node {node} - component id: {attributes.get('component_id')}")
                 continue
 
@@ -186,7 +187,7 @@ def load_inserts_group(inserts_group_fp):
         
 
 def create_cc_json_entity(proteomeEpitopesBestHits, iedb, iedbTcruziEpitopesHits, iedbTcruziTableHandler, iedbHumanEpitopesHits, iedbHumanBlastHandler, report_json_epitopes_list, cc, reads_cc, pepiteds_cc, features_cc, genomic_region_locus, msa_page_name, e, inserts_group_set):
-    # Default values so JSON fields are always present even when optional inputs are missing
+    ## Default values so JSON fields are always present even when optional inputs are missing
     epitope_proteome_best_hit = None
     tcruziEpitopeIEDBHits = []
     humanEpitopeIEDBHits = []
