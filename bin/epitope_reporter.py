@@ -6,6 +6,8 @@ import click
 import networkx as nx
 import pickle
 import os
+import csv
+
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -108,6 +110,7 @@ def main(graph_file:click.Path,
     cc_sorted_list = get_sorted_connected_components(graph)
     epitope_candidates_graph = []
     report_json_epitopes_list = []
+    agrs = []
     for cc in cc_sorted_list:
         logger.debug(f"Connected component: {cc}")        
         reads_cc = set()
@@ -115,6 +118,9 @@ def main(graph_file:click.Path,
         genomic_region_annotation_cc = []
         epitope_candidates_cc = []
         genomic_region_locus = []
+
+        cc_n_nodes = cc.number_of_nodes()
+        cc_n_edges = cc.number_of_edges()
         for node, attributes in cc.nodes(data=True):
             if not single_reads and len(attributes.get('reads')) < 2:
                 # Skipping because not allowed single read on report
@@ -123,18 +129,33 @@ def main(graph_file:click.Path,
 
             cc_ids = set()
             genomic_region_locus.append(_get_locus_from_segment(node))
-        
+
+            agr = {} # Antigenic Genomic Region
+            agr['region'] = node
+            agr['n_nodes'] = cc_n_nodes
+            agr['n_edges'] = cc_n_edges
+                        
             for attr, value in attributes.items():
                 if attr == 'component_id':
                     cc_ids.add(value)
+                    agr['cc_id'] = value                
                 if attr == 'reads':
                     reads_cc.update(value)
+                    agr['reads'] = len(value)
+                    agr['inserts_by_group'] = create_insert_by_group(value, inserts_group_set)                
                 if attr == 'peptides':
                     pepiteds_cc.update(value)
+                    agr['peptides'] = len(value)
                 if attr == 'epitope_candidates' and len(epitope_candidates_cc) == 0: # all the nodes should has the same epitope candidates
                     epitope_candidates_cc = value
                 if attr == 'feature':
-                    genomic_region_annotation_cc.extend(parse_genomic_region_annotation(value))
+                    parsed_genomic_region_annotation = parse_genomic_region_annotation(value)
+                    genomic_region_annotation_cc.extend(parsed_genomic_region_annotation)                
+                    agr['feature'] = parsed_genomic_region_annotation
+                if attr == 'reads_map_strand':
+                    agr['reads_map_strand'] = value
+                if attr == 'mappings_number':
+                    agr['mappings_number'] = value
 
             if len(cc_ids) > 1:
                 raise Exception(f"CC {cc} has multiple component_ids: {cc_ids}")
@@ -143,14 +164,18 @@ def main(graph_file:click.Path,
 
             msa_page_name = _create_mview_name(cc_id, pepiteds_cc)
 
+            agr['epitope_candidates'] = epitope_candidates_cc 
+            agrs.append(agr)
+            
+            
+ 
+        
         if single_reads:
             epitope_candidates_graph.extend(epitope_candidates_cc)
         else:
             if len(reads_cc) >= 2: 
                 epitope_candidates_graph.extend(epitope_candidates_cc)
             
-        
-        
         ept_candidantes_seq = []
         for e in epitope_candidates_cc:
             ept_candidantes_seq.append(str(e.seq))
@@ -170,6 +195,18 @@ def main(graph_file:click.Path,
     # Write the JSON object to a file
     with open(f"{output_file_name}.json", "w") as json_file:
         json.dump(report_json_epitopes_list, json_file, indent=4)
+    
+    # Write the AGRs information to a TSV file
+    agrs_fieldnames = ['cc_id', 'n_nodes', 'n_edges', 'region', 'reads', 'reads_map_strand', 'mappings_number', 'peptides', 'epitope_candidates', 'feature', 'inserts_by_group']
+    with open(f"{output_file_name}-agrs.tsv", 'w', newline='') as tsvfile:
+        # Create a dictionary writer object, specifying the tab delimiter
+        tsv_writer = csv.DictWriter(tsvfile, fieldnames=agrs_fieldnames, delimiter='\t')
+
+        # Write the header row
+        tsv_writer.writeheader()
+
+        # Write the data rows
+        tsv_writer.writerows(agrs)    
 
 def load_inserts_group(inserts_group_fp):
     inserts_group = {}
