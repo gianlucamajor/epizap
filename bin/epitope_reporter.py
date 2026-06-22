@@ -146,6 +146,7 @@ def main(graph_file:click.Path,
                 if attr == 'peptides':
                     pepiteds_cc.update(value)
                     agr['peptides'] = len(value)
+                    agr['peptides_list'] = [int(x) for x in value]
                 if attr == 'epitope_candidates' and len(epitope_candidates_cc) == 0: # all the nodes should has the same epitope candidates
                     epitope_candidates_cc = value
                 if attr == 'feature':
@@ -197,7 +198,7 @@ def main(graph_file:click.Path,
         json.dump(report_json_epitopes_list, json_file, indent=4)
     
     # Write the AGRs information to a TSV file
-    agrs_fieldnames = ['cc_id', 'n_nodes', 'n_edges', 'region', 'reads', 'reads_map_strand', 'mappings_number', 'peptides', 'epitope_candidates', 'feature', 'inserts_by_group']
+    agrs_fieldnames = ['cc_id', 'n_nodes', 'n_edges', 'region', 'reads', 'reads_map_strand', 'mappings_number', 'peptides', 'epitope_candidates', 'feature', 'inserts_by_group', 'peptides_list']
     with open(f"{output_file_name}-agrs.tsv", 'w', newline='') as tsvfile:
         # Create a dictionary writer object, specifying the tab delimiter
         tsv_writer = csv.DictWriter(tsvfile, fieldnames=agrs_fieldnames, delimiter='\t')
