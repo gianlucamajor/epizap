@@ -25,7 +25,7 @@ def main(graph_file: click.Path, connected_component: int, verbose: bool):
     for idx, cc in enumerate(cc_list):
         if connected_component is not None and idx == connected_component:
             print_cc(cc, idx, verbose)
-            draw_graph(cc)
+            # draw_graph(cc)
         elif connected_component is None:
             print_cc(cc, idx, verbose)
     
@@ -46,7 +46,8 @@ def print_cc(cc, idx, verbose):
     if verbose:
         print_cc_details(cc, idx)
     else:
-        print_cc_summary(cc, idx)
+        print_cc_summary_in_line(cc, idx)
+        # print_cc_summary(cc, idx)
 
 def print_cc_summary(cc, idx):
     print(f"Connected component: {idx} - {cc}")        
@@ -56,7 +57,19 @@ def print_cc_summary(cc, idx):
             if attr == 'peptides' or attr == 'reads':
                 value = len(value)
             
-            print(f"  {attr}: {value} ")    
+            print(f"  {attr}: {value} ")
+
+def print_cc_summary_in_line(cc, idx):
+    for node, attributes in cc.nodes(data=True):
+        line_array = []
+        line_array.append(node)
+        # print(f"{node}")        
+        for attr, value in attributes.items():
+            if attr == 'peptides' or attr == 'reads':
+                value = len(value)
+            line_array.append(value)
+            # print(f"{attr}:\t{value}", end=" ")
+        print("\t".join(str(item) for item in line_array))
 
 def print_cc_details(cc, idx):
     print(f"Connected component {idx}: {cc}")        
