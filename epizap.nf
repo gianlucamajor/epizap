@@ -5,6 +5,7 @@ params.outdir = "results"
 params.mapper = ""
 params.annotation = "${projectDir}/dataSet/ref/annotation_genomic_dummy.gff" //.gff
 params.graph_segment_threshold = 1.00
+params.inserts_group = ""
 
 
 params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
@@ -33,7 +34,8 @@ log.info """\
     Outdir: ${params.outdir}
     Peptiede Segment: ${params.pepSeg}
     Mapper file: ${params.mapper}
-    
+    Inserts Group: ${params.inserts_group}
+
     ===================================
     """.stripIndent()
 
@@ -63,7 +65,7 @@ log.info """\
     
     graphUpdater(peptideClusteringByCC.out.graph, predicator.out.msaEpitopeReport, segmentRetriverResult.aFeatures)
     
-    epitopeReporter(graphUpdater.out.graph)
+    epitopeReporter(graphUpdater.out.graph, params.inserts_group)
 
     // lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
 
