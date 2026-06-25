@@ -165,6 +165,13 @@ cython_debug/
 /work
 .nextflow
 /blast
+
+# avoid tracking of large gPhage data files
 /dataSet/gPhage_data/*.tsv
 /dataSet/gPhage_data/*.fasta
 /dataSet/gPhage_data/*.fastq
+
+# avoid tracking of large genome reference files
+/dataSet/genome_ref_Br_A4/*.fna
+/dataSet/genome_ref_Br_A4/*.fasta
+/dataSet/genome_ref_Br_A4/*.gff
