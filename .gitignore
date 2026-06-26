@@ -170,6 +170,7 @@ cython_debug/
 /dataSet/gPhage_data/*.tsv
 /dataSet/gPhage_data/*.fasta
 /dataSet/gPhage_data/*.fastq
+/dataSet/gPhage_data/*.zip
 
 # avoid tracking of large genome reference files
 /dataSet/genome_ref_Br_A4/*.fna
