@@ -19,7 +19,8 @@ workflow segmentRetriever{
     
     SEGMENT_EXTRACTOR(mapping)
     if (annotated){
-        SEGMENT_NOTE_TAKER(SEGMENT_EXTRACTOR.out, annotated)
+
+        SEGMENT_NOTE_TAKER(SEGMENT_EXTRACTOR.out, Channel.fromPath(annotated))
     }
     SEQUENCE_EXTRACTOR(SEGMENT_EXTRACTOR.out, peptidesCh)
     

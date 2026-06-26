@@ -7,6 +7,7 @@ process EPITOPE_REPORTER {
 
     input:
     tuple val(meta), path(graphFile)
+    path(insertsGroupFile)
 
     output:
     path("epitopes_report/*.json"), emit: jsonReport
@@ -14,9 +15,10 @@ process EPITOPE_REPORTER {
     path("epitopes_report/*.pickle"), emit: graphReport
 
     script:
+    def insertsGroupArg = insertsGroupFile.name != 'NO_FILE' ? "--inserts-group ${insertsGroupFile}" : ""
     """
     mkdir -p epitopes_report
-    epitope_reporter.py ${graphFile} -o epitopes_report/
+    epitope_reporter.py ${graphFile} -o epitopes_report/ ${insertsGroupArg}
     cp ${graphFile} epitopes_report/
 
     """

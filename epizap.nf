@@ -1,10 +1,11 @@
-params.reads = "${projectDir}/dataSet/k-dna-insert-reads/*.fastq"
-params.peptides = "${projectDir}/dataSet/peptides/kDNA-aa-in-frame.fasta"
-params.ref = "${projectDir}/dataSet/ref/y_strain_minicircles.fasta"
+params.reads = "${projectDir}/dataSet/kDNA_gPhage/DNA_inserts_kDNA.fastq"
+params.peptides = "${projectDir}/dataSet/kDNA_gPhage/peptides_encoded_by_kDNA_inserts.fasta"
+params.ref = "${projectDir}/dataSet/kDNA_gPhage/y_strain_minicircles.fasta"
+params.annotation = "${projectDir}/dataSet/kDNA_gPhage/annotation_genomic_dummy.gff" //.gff
+params.graph_segment_threshold = 1.00
 params.outdir = "results"
 params.mapper = ""
-params.annotation = "${projectDir}/dataSet/ref/annotation_genomic_dummy.gff" //.gff
-params.graph_segment_threshold = 1.00
+params.inserts_group = ""
 
 
 params.pepSeg = "${projectDir}/${params.outdir}/peptides-segment/*.fasta"
@@ -33,7 +34,8 @@ log.info """\
     Outdir: ${params.outdir}
     Peptiede Segment: ${params.pepSeg}
     Mapper file: ${params.mapper}
-    
+    Inserts Group: ${params.inserts_group}
+
     ===================================
     """.stripIndent()
 
@@ -63,7 +65,7 @@ log.info """\
     
     graphUpdater(peptideClusteringByCC.out.graph, predicator.out.msaEpitopeReport, segmentRetriverResult.aFeatures)
     
-    epitopeReporter(graphUpdater.out.graph)
+    epitopeReporter(graphUpdater.out.graph, params.inserts_group)
 
     // lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
 
