@@ -1,5 +1,5 @@
 # EPIZAP
-Ferramenta computacional para predição de epítopos a partir de dados de Phage Display
+computational pipeline designed to optimize the processing of gPhage data
 
 ## Requirements
 
@@ -126,11 +126,15 @@ The `epitopes_report/` directory holds the final output of the pipeline:
 - `*.json` — one entry per predicted epitope, with: `ID`, `Epitope` (sequence), `Number of AGRs`, `Number of Peptides`, `Number of Inserts` (and the breakdown by group when `--inserts_group` is used), `MSA` (alignment page name), `Genomic Region Locus`, and `Features` (best proteome hit, genomic region annotation, and IEDB T. cruzi / human epitope hits, when those inputs are provided).
 - `*.pickle` — the updated graph (Python pickle of the networkx graph object) used to generate the FASTA/JSON reports; can be reloaded for further analysis or to re-run `epitope_reporter.py` with different options (e.g. `--inserts-group`, `--iedb`).
 
-## EPIZAP with pre-processed gPhage data (T. cruzi)
+## EPIZAP with pre-processed gPhage data (*T. cruzi*)
 
 This example uses the pre-processed gPhage dataset (DNA inserts and encoded peptides from all patient groups, merged) mapped against the *T. cruzi* Brazil Clone A4 reference genome.
 
+<mark>**Important:** Processing this dataset is computationally intensive. It is strongly recommended that computational resources be at least equivalent to those described in [Hardware and performance](#hardware-and-performance).</mark>
+
 ### gPhage data (download required)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20854186.svg)](https://doi.org/10.5281/zenodo.20854186)
 
 The gPhage input files (`DNA_inserts_all_patients_groups.fastq`, `DNA_insert_IDs_by_group.tsv`, `peptides_encoded_by_DNA_inserts.fasta`/`.tsv`) are too large to ship in this repository. They are published on Zenodo (DOI [10.5281/zenodo.20854186](https://doi.org/10.5281/zenodo.20854186)) and described in detail in [dataSet/gPhage_data/README](dataSet/gPhage_data/README).
 
