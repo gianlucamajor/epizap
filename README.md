@@ -3,6 +3,9 @@ Ferramenta computacional para predição de epítopos a partir de dados de Phage
 
 ## Requirements
 
+### Hardware and performance
+EPIZAP was developed and tested on a system equipped with an **Intel Core 7-150U processor (10 cores, 12 MB cache, up to 5.4 GHz), 32 GB of DDR5 RAM, and a 512 GB SSD.**
+
 ### NEXTFLOW
 
 This application was developed and tested on NEXTFLOW version 24.10.4;
@@ -22,7 +25,9 @@ https://hub.docker.com/r/gianlucamajor/epizap
 
 ### Current version
 
+```
 docker pull gianlucamajor/epizap:v0.3.0-alpha
+```
 
 ## Quick start
 
@@ -156,4 +161,79 @@ nextflow epizap.nf \
   --annotation dataSet/genome_ref_Br_A4/genomic.gff \
   --inserts_group dataSet/gPhage_data/DNA_insert_IDs_by_group.tsv \
   --outdir results_gPhage_BrA4
+```
+
+
+## Annotation report (epizap-annot-report.nf)
+
+`epizap-annot-report.nf` is a standalone workflow that (re-)generates the epitope report (`*.fasta`/`*.json`/`*.pickle`) from a graph `.pickle` already produced by `epizap.nf` (i.e. the file in `<outdir>/graph-updated/`), enriching it with BLAST hits against the *T. cruzi* proteome and/or IEDB epitope databases — without re-running the full pipeline.
+
+### Parameters
+
+- `--graph` (required) — path to the `*-graph-cc-id-msa-epitopes.pickle` file to annotate/report.
+- `--outdir` — output directory (default: `results/ept-annot-reported`).
+- `--proteome_hits` — BLAST results of the epitopes against the *T. cruzi* proteome.
+- `--iedb` — enable IEDB annotation. Requires `--iedb_tcruzi_epitopes_hits` and `--iedb_tcruzi_epitopes`.
+- `--iedb_tcruzi_epitopes_hits` — BLAST results of the epitopes against the IEDB *T. cruzi* epitope database.
+- `--iedb_tcruzi_epitopes` — IEDB *T. cruzi* epitope table (CSV).
+- `--iedb_human_epitopes_hits` — BLAST results of the epitopes against the IEDB human epitope database (optional).
+- `--iedb_human_epitopes` — IEDB human epitope table (CSV, optional).
+
+### Annotation report data (download required)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20941568.svg)](https://doi.org/10.5281/zenodo.20941568)
+
+The BLAST hit tables and IEDB epitope tables used by `--proteome_hits`, `--iedb_tcruzi_epitopes_hits`, `--iedb_tcruzi_epitopes`, `--iedb_human_epitopes_hits` and `--iedb_human_epitopes` are too large to ship in this repository. They are published on Zenodo (DOI [10.5281/zenodo.20941568](https://doi.org/10.5281/zenodo.20941568)) and described in detail in [dataSet/gPhage_annot_report_data/README](dataSet/gPhage_annot_report_data/README.md).
+
+Download them, place the `.zip` files in `dataSet/gPhage_annot_report_data/`, and unzip them there before running the annotation report. You can do this manually or with the helper script:
+
+```
+bin/download_gPhage_annot_report_data.sh
+```
+
+It downloads each file from Zenodo into `dataSet/gPhage_annot_report_data/`, verifies its MD5 checksum and unzips it.
+
+### Run
+
+```
+nextflow run epizap-annot-report.nf \
+  --graph results_gPhage_BrA4/graph-updated/DNA_inserts_all_patients_groups_mapped-segment-graph-graph-cc-id-msa-epitopes.pickle \
+  --outdir results_gPhage_BrA4/ept-annot-reported \
+  --proteome_hits dataSet/gPhage_annot_report_data/proteome_hits.tsv \
+  --iedb \
+  --iedb_tcruzi_epitopes_hits dataSet/gPhage_annot_report_data/iedb_tcruzi_epitopes_hits.tsv \
+  --iedb_tcruzi_epitopes dataSet/gPhage_annot_report_data/iedb_tcruzi_epitopes_1747317719_15052025.csv \
+  --iedb_human_epitopes_hits dataSet/gPhage_annot_report_data/iedb_human_epitopes_hits.tsv \
+  --iedb_human_epitopes dataSet/gPhage_annot_report_data/iedb_human_epitopes_1757095864.csv
+```
+
+The report files are written to `<outdir>/epitopes_report/` (same layout described in [EPIZAP output files](#epizap-output-files)).
+
+
+## Resource configuration (nextflow.config)
+
+CPU and memory allocation for each pipeline step is controlled by `nextflow.config`, through Nextflow's `profiles` and process resource [labels](https://www.nextflow.io/docs/latest/process.html#label). Each process in the pipeline is tagged with one of five labels, and each profile defines how many CPUs/how much memory a process with that label gets.
+
+### Labels
+
+- `one_cpu` — lightweight, single-threaded steps.
+- `few_cpu` — small parallelizable steps.
+- `med_cpu` — moderate CPU, moderate memory.
+- `med_cpu_high_memory` — moderate CPU, high memory (e.g. large alignment/graph steps).
+- `many_cpu` — the most CPU-intensive steps (e.g. mapping).
+
+### Profiles
+
+- `standard` (default) — runs locally via Docker (`docker.enabled = true`), using the `gianlucamajor/epizap` image. Resource values here are tuned for a single workstation; adjust the `cpus`/`memory` values per label if your machine has more or fewer resources than the one described in [Hardware and performance](#hardware-and-performance).
+
+- `cluster` — runs on a PBS cluster via Singularity (`singularity.enabled = true`), using `clusterOptions` to request nodes/cpus/vmem per job and adding a `time` limit per label.
+
+- `gcp` — runs on Google Cloud Batch (`executor = 'google-batch'`), using the Docker image and choosing a `machineType` (e.g. `e2-*`, `n1-*`) per label. Edit `google.project` and `google.location` to match your GCP project.
+
+`memory = { X.GB * task.attempt }` means the memory request grows with each retry attempt (Nextflow's automatic retry on failure), so a process that fails due to an out-of-memory error is automatically retried with more memory.
+
+Select a profile with `-profile`, e.g.:
+
+```
+nextflow run epizap.nf -profile cluster
 ```
