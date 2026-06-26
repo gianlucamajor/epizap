@@ -66,11 +66,5 @@ log.info """\
     graphUpdater(peptideClusteringByCC.out.graph, predicator.out.msaEpitopeReport, segmentRetriverResult.aFeatures)
     
     epitopeReporter(graphUpdater.out.graph, params.inserts_group)
-
-    // lonelyPeptideRetriever(segmentRetriverResult.peptidesFromSegment)
-
-    // lonelyPeptideRetriever.out.mix(predicator.out)
-    //     .set{epitopesByMSACoreAndLonely}        
-    // msaCoreAndLonelyEpitopesJoiner(epitopesByMSACoreAndLonely)
     
 }
