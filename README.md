@@ -4,7 +4,7 @@ computational pipeline designed to optimize the processing of gPhage data
 ## Requirements
 
 ### Hardware and performance
-EPIZAP was developed and tested on a system equipped with an **Intel Core 7-150U processor (10 cores, 12 MB cache, up to 5.4 GHz), 32 GB of DDR5 RAM, and a 512 GB SSD.**
+EPIZAP was developed and tested on a Linux (Ubuntu) system equipped with an **Intel Core 7-150U processor (10 cores, 12 MB cache, up to 5.4 GHz), 32 GB of DDR5 RAM, and a 512 GB SSD.**
 
 ### NEXTFLOW
 
